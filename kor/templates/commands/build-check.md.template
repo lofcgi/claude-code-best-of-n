@@ -1,0 +1,30 @@
+---
+description: 빌드 및 타입 검사 실행, 에러 수정
+allowed-tools: [Read, Edit, Bash, Glob, Grep]
+---
+
+빌드와 타입 검증을 수행하세요.
+
+## 수행 작업
+
+1. `.env.example` 존재 확인
+   - 없으면 코드에서 `process.env`를 검색하여 `.env.example` 자동 생성
+   - 이미 있으면 누락된 키가 없는지 확인
+
+2. ESLint 체크
+   ```bash
+   npx next lint
+   ```
+   - 에러가 있으면 수정 (warning은 무시 가능)
+   - `eslint.config.mjs` 또는 `.eslintrc.json`이 없으면 기본 설정으로 진행
+
+3. npm run build 실행
+   - 에러가 있으면 수정
+   - 수정 후 다시 빌드
+
+4. npx tsc --noEmit 으로 타입 체크
+   - 타입 에러가 있으면 수정
+
+5. 모든 에러 해결 후 빌드 성공 확인
+
+6. 빌드 성공 시 /self-review 실행

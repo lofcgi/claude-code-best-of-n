@@ -1,0 +1,23 @@
+---
+description: Self-review against acceptance criteria
+allowed-tools: [Read, Bash, Glob, Grep]
+---
+
+Read ../../analysis/acceptance-criteria.md and verify each acceptance criterion.
+
+## Tasks
+
+For each AC item:
+1. Verify the feature's code exists (using Grep, Glob)
+2. Code review to confirm correct implementation (Read related files)
+3. Pass/fail determination
+
+## Result Handling
+- If any items fail, create a list and pass to /iterate.
+- If all items pass, output "Implementation complete" message.
+
+## Check Format
+```
+- [x] AC-001: [description] — PASS
+- [ ] AC-002: [description] — FAIL: [reason]
+```

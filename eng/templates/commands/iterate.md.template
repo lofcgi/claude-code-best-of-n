@@ -1,0 +1,15 @@
+---
+description: Fix issues found in self-review
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep]
+---
+
+Fix the following issues: $ARGUMENTS
+
+## Tasks
+
+1. Analyze the provided issue list
+2. For each issue:
+   - Find related code files
+   - Identify root cause
+   - Implement fix
+3. Run /build-check after fixes to verify.

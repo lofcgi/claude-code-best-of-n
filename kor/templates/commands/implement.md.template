@@ -1,0 +1,167 @@
+---
+description: PRD와 프로토타입 기반 풀스택 애플리케이션 구현
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep]
+---
+
+당신은 이 디렉토리에서 풀스택 웹 애플리케이션을 구현하는 시니어 개발자입니다.
+
+## 참조 문서
+- ../../analysis/prd.md — 구조화된 요구사항
+- ../../analysis/requirements.json — 기능 목록
+- ../../analysis/tech-constraints.md — 기술 제약사항
+- prototype/ — UI 프로토타입 (이 디자인을 기반으로 구현)
+
+## Step 1: 프로젝트 초기화
+
+```bash
+npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm
+```
+
+## Step 2: 필수 패키지 설치
+
+requirements.json의 tech_stack을 참조하되, 아래 패키지는 기본 포함:
+
+```bash
+# 인증
+npm install next-auth@beta
+
+# UI
+npx shadcn@latest init -d
+npx shadcn@latest add button card input label skeleton toast dialog dropdown-menu avatar
+
+# DB (Turso 사용 시)
+npm install @libsql/client drizzle-orm
+npm install -D drizzle-kit
+
+# 유틸리티
+npm install sonner clsx tailwind-merge lucide-react
+```
+
+## Step 3: 환경 변수 설정
+
+`.env.local` 파일 생성 (커밋 금지):
+```
+# Auth.js
+AUTH_SECRET=          # npx auth secret 으로 생성
+AUTH_URL=http://localhost:3000
+
+# Google OAuth (console.cloud.google.com)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Database (Turso)
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+`.env.example` 파일도 동시 생성 (값은 비워두고 키만):
+```
+AUTH_SECRET=
+AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+## Step 4: Auth.js v5 + Google OAuth
+
+`src/auth.ts`:
+```typescript
+import NextAuth from "next-auth"
+import Google from "next-auth/providers/google"
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  callbacks: {
+    authorized: async ({ auth }) => {
+      return !!auth
+    },
+  },
+})
+```
+
+`src/app/api/auth/[...nextauth]/route.ts`:
+```typescript
+import { handlers } from "@/auth"
+export const { GET, POST } = handlers
+```
+
+`src/middleware.ts`:
+```typescript
+export { auth as middleware } from "@/auth"
+export const config = {
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+}
+```
+
+## Step 5: DB 초기화
+
+`src/lib/db.ts`:
+```typescript
+import { createClient } from "@libsql/client"
+
+export const db = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+})
+```
+
+- Drizzle 또는 raw SQL로 스키마 정의
+- `drizzle.config.ts` 설정
+- requirements.json의 features에 맞는 테이블 생성
+
+## Step 6: API Route 패턴
+
+모든 API route는 아래 패턴을 따를 것:
+
+```typescript
+import { NextResponse } from "next/server"
+import { auth } from "@/auth"
+
+export async function GET() {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // 비즈니스 로직
+    return NextResponse.json({ data })
+  } catch (error) {
+    console.error("[API_NAME]", error)
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Step 7: UI 구현
+
+- prototype/ 디렉토리의 디자인을 기반으로 구현
+- shadcn/ui 컴포넌트 활용
+- 서버 컴포넌트 우선, 필요한 곳만 "use client"
+- 로딩 상태: `loading.tsx` 또는 `Suspense` + `Skeleton`
+
+## Step 8: Vercel 배포 대비
+
+- 환경 변수는 모두 `process.env`로 접근 (하드코딩 금지)
+- API route body 크기: 4.5MB 제한
+- Serverless function timeout: 60초 (Pro 플랜 300초)
+- Edge Runtime 사용 시 Node.js API 제약 주의
+- `next.config.ts`에서 이미지 도메인 설정
+
+## 완료 조건
+- requirements.json의 모든 기능 구현
+- `.env.example` 파일 존재
+- `npm run build` 성공
+- TypeScript 에러 없음
+
+구현 완료 후 /build-check를 실행하세요.

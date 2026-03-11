@@ -1,0 +1,45 @@
+# {{PROJECT_NAME}} — Version {{VERSION_NUMBER}}
+
+## Project
+{{PROJECT_DESCRIPTION}}
+
+## Tech Stack
+{{TECH_STACK}}
+
+### Default Stack (used when not specified in PRD)
+- **Framework**: Next.js 15 (App Router, TypeScript, Tailwind CSS)
+- **Auth**: Auth.js v5 + Google OAuth
+- **DB**: Turso (libSQL) + Drizzle ORM
+- **UI**: shadcn/ui + Lucide Icons
+- **Deploy**: Vercel
+
+## Reference Documents
+- ../../analysis/prd.md — Requirements
+- ../../analysis/requirements.json — Feature list
+- ../../analysis/acceptance-criteria.md — Acceptance criteria
+- prototype/ — UI prototype
+
+## Environment Variables (.env.local)
+```
+AUTH_SECRET=          # npx auth secret
+AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=     # Google Cloud Console
+GOOGLE_CLIENT_SECRET=
+TURSO_DATABASE_URL=   # Turso dashboard
+TURSO_AUTH_TOKEN=
+```
+- NEVER commit `.env.local`
+- Commit `.env.example` with keys only
+
+## Rules
+- Reflect prototype/ designs as closely as possible
+- TypeScript strict mode
+- All API routes must have try-catch + NextResponse error handling
+- Environment variables in .env.local (never commit)
+- Server components first, "use client" only when necessary
+
+## Vercel Deployment Constraints
+- API route body size: 4.5MB limit
+- Serverless function timeout: 60s (Pro plan 300s)
+- Edge Runtime cannot use Node.js-specific APIs (fs, child_process, etc.)
+- Must configure external image domains in `next.config.ts`

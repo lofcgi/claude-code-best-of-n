@@ -1,0 +1,30 @@
+---
+description: Run build and type check, fix any errors
+allowed-tools: [Read, Edit, Bash, Glob, Grep]
+---
+
+Run build and type validation.
+
+## Tasks
+
+1. Verify `.env.example` exists
+   - If missing, search code for `process.env` and auto-generate `.env.example`
+   - If exists, check for missing keys
+
+2. ESLint check
+   ```bash
+   npx next lint
+   ```
+   - Fix errors (warnings can be ignored)
+   - If `eslint.config.mjs` or `.eslintrc.json` doesn't exist, proceed with defaults
+
+3. Run npm run build
+   - Fix any errors
+   - Rebuild after fixes
+
+4. Type check with npx tsc --noEmit
+   - Fix any type errors
+
+5. Confirm build success after all errors resolved
+
+6. Run /self-review on successful build

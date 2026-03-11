@@ -1,0 +1,167 @@
+---
+description: Implement the full-stack application based on PRD and prototype
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep]
+---
+
+You are a senior developer implementing a full-stack web application in this directory.
+
+## Reference Documents
+- ../../analysis/prd.md — Structured requirements
+- ../../analysis/requirements.json — Feature list
+- ../../analysis/tech-constraints.md — Technical constraints
+- prototype/ — UI prototype (implement based on this design)
+
+## Step 1: Project Initialization
+
+```bash
+npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm
+```
+
+## Step 2: Install Required Packages
+
+Reference tech_stack from requirements.json, but always include these:
+
+```bash
+# Authentication
+npm install next-auth@beta
+
+# UI
+npx shadcn@latest init -d
+npx shadcn@latest add button card input label skeleton toast dialog dropdown-menu avatar
+
+# DB (when using Turso)
+npm install @libsql/client drizzle-orm
+npm install -D drizzle-kit
+
+# Utilities
+npm install sonner clsx tailwind-merge lucide-react
+```
+
+## Step 3: Environment Variables
+
+Create `.env.local` file (never commit):
+```
+# Auth.js
+AUTH_SECRET=          # Generate with: npx auth secret
+AUTH_URL=http://localhost:3000
+
+# Google OAuth (console.cloud.google.com)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Database (Turso)
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+Also create `.env.example` (keys only, no values):
+```
+AUTH_SECRET=
+AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+## Step 4: Auth.js v5 + Google OAuth
+
+`src/auth.ts`:
+```typescript
+import NextAuth from "next-auth"
+import Google from "next-auth/providers/google"
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  callbacks: {
+    authorized: async ({ auth }) => {
+      return !!auth
+    },
+  },
+})
+```
+
+`src/app/api/auth/[...nextauth]/route.ts`:
+```typescript
+import { handlers } from "@/auth"
+export const { GET, POST } = handlers
+```
+
+`src/middleware.ts`:
+```typescript
+export { auth as middleware } from "@/auth"
+export const config = {
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+}
+```
+
+## Step 5: DB Initialization
+
+`src/lib/db.ts`:
+```typescript
+import { createClient } from "@libsql/client"
+
+export const db = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+})
+```
+
+- Define schema with Drizzle or raw SQL
+- Configure `drizzle.config.ts`
+- Create tables matching features in requirements.json
+
+## Step 6: API Route Pattern
+
+All API routes must follow this pattern:
+
+```typescript
+import { NextResponse } from "next/server"
+import { auth } from "@/auth"
+
+export async function GET() {
+  try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Business logic
+    return NextResponse.json({ data })
+  } catch (error) {
+    console.error("[API_NAME]", error)
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Step 7: UI Implementation
+
+- Implement based on designs in prototype/ directory
+- Use shadcn/ui components
+- Server components first, "use client" only when needed
+- Loading states: `loading.tsx` or `Suspense` + `Skeleton`
+
+## Step 8: Vercel Deployment Preparation
+
+- Access all env vars via `process.env` (no hardcoding)
+- API route body size: 4.5MB limit
+- Serverless function timeout: 60s (Pro plan 300s)
+- Be aware of Node.js API restrictions with Edge Runtime
+- Configure image domains in `next.config.ts`
+
+## Completion Criteria
+- All features from requirements.json implemented
+- `.env.example` file exists
+- `npm run build` succeeds
+- No TypeScript errors
+
+Run /build-check after implementation is complete.
