@@ -45,4 +45,8 @@ $ARGUMENTS = 선택된 프로토타입 (a, b, or c)
    Terminal 1: cd versions/v1 && claude → /implement
    Terminal 2: cd versions/v2 && claude → /implement
    Terminal 3: cd versions/v3 && claude → /implement
+
+   각 터미널에서 /implement → /build-check → /self-review 순으로 자동 진행됩니다.
+   모든 버전이 "Implementation Complete" 메시지를 출력하면
+   이 터미널로 돌아와서 /evaluate를 실행하세요.
    ```

@@ -45,4 +45,8 @@ $ARGUMENTS = Selected prototype (a, b, or c)
    Terminal 1: cd versions/v1 && claude → /implement
    Terminal 2: cd versions/v2 && claude → /implement
    Terminal 3: cd versions/v3 && claude → /implement
+
+   Each terminal will auto-progress: /implement → /build-check → /self-review.
+   Once all versions display "Implementation Complete",
+   return to this terminal and run /evaluate.
    ```
