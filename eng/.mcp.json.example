@@ -20,9 +20,11 @@
       }
     },
     "vercel": {
+      "type": "sse",
       "url": "https://mcp.vercel.com"
     },
     "github": {
+      "type": "sse",
       "url": "https://api.githubcopilot.com/mcp/",
       "headers": {
         "Authorization": "Bearer ${GITHUB_TOKEN}"
@@ -40,8 +42,8 @@
       }
     },
     "design-inspiration": {
-      "command": "node",
-      "args": ["../tools/design-inspiration-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "design-inspiration-mcp"],
       "env": {
         "SERPER_API_KEY": ""
       }

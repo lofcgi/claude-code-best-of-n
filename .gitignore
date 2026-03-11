@@ -7,4 +7,7 @@ dist/
 .turso/
 *.db
 .DS_Store
-kor/input/*.pdf
+.mcp.json
+*/input/*.pdf
+tools/design-inspiration-mcp/node_modules/
+tools/design-inspiration-mcp/dist/
