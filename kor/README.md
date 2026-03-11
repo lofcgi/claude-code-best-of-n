@@ -39,12 +39,15 @@ git --version
 </details>
 
 <details>
-<summary><strong>선택 API 키 (분석 품질 향상용, 필수 아님)</strong></summary>
+<summary><strong>MCP 서버 설정 (선택, 프로토타입 및 분석 품질 향상)</strong></summary>
 
-| 키 | 용도 |
-|----|------|
-| Firecrawl API 키 | `/analyze` 시 웹 리서치 품질 향상 |
-| GitHub PAT | MCP를 통한 브랜치/PR 관리 |
+| MCP 서버 | 설정 | 비고 |
+|----------|------|------|
+| v0 | 설정 불필요 | npx로 자동 설정 |
+| 21st-dev Magic | [21st.dev/magic/console](https://21st.dev/magic/console)에서 API 키 발급 | 베타, 무료 |
+| Design Inspiration | `cd tools/design-inspiration-mcp && npm install && npm run build` + [Serper API 키](https://serper.dev) | 디자인 레퍼런스 검색 |
+| Firecrawl | [firecrawl.dev](https://firecrawl.dev) API 키 | `/analyze` 시 웹 리서치 품질 향상 |
+| GitHub | GitHub PAT | MCP를 통한 브랜치/PR 관리 |
 
 </details>
 
@@ -174,17 +177,19 @@ kor/
 
 ## MCP 서버
 
-7개의 MCP 서버가 `.mcp.json`에 포함되어 있어, `cd kor && claude` 만으로 자동 로드됩니다.
+9개의 MCP 서버가 `.mcp.json`에 포함되어 있어, `cd kor && claude` 만으로 자동 로드됩니다.
 
 | MCP 서버 | 용도 | 설정 |
 |----------|------|------|
 | Sequential Thinking | PRD 단계별 분석 | 제로 설정 |
 | Playwright | 브라우저 자동 테스트 | 제로 설정 |
+| v0 | AI 프로토타입 코드 생성 | 제로 설정 (npx) |
 | Vercel | MCP 배포 | OAuth |
-| Supabase | DB 관리 | OAuth |
 | Context7 | 최신 문서 참조 | API 키 (무료) |
 | Firecrawl | 웹 크롤링/리서치 | API 키 |
 | GitHub | 브랜치/PR 관리 | PAT |
+| 21st-dev Magic | UI 컴포넌트 영감 + 생성 | API 키 (21st.dev, 베타 무료) |
+| Design Inspiration | Dribbble/Behance/Awwwards 레퍼런스 검색 | Clone + build + Serper API 키 |
 
 API 키 설정 및 상세 안내: [docs/mcp-guide.md](docs/mcp-guide.md)
 

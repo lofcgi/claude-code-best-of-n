@@ -1,9 +1,9 @@
 # MCP Server Guide
 
-This pipeline includes 7 MCP servers in `.mcp.json`.
+This pipeline includes 9 MCP servers in `.mcp.json`.
 They auto-load when you run `cd eng && claude`. Servers without API keys will simply deactivate without affecting others.
 
-## Included MCP Servers (7)
+## Included MCP Servers (9)
 
 ### Zero Config (No API Key Needed)
 
@@ -11,13 +11,13 @@ They auto-load when you run `cd eng && claude`. Servers without API keys will si
 |------------|---------|-------------------|
 | **Sequential Thinking** | Step-by-step PRD analysis, complex problem decomposition | `/analyze` |
 | **Playwright** | Automated browser testing, screenshot capture | `/evaluate` |
+| **v0** | AI prototype code generation (Vercel) | `/prototype` |
 
 ### OAuth (Browser Login)
 
 | MCP Server | Purpose | Skill Integration |
 |------------|---------|-------------------|
 | **Vercel** | Deploy via MCP | `/ship` |
-| **Supabase** | Supabase project management | Implementation phase |
 
 ### API Key Required
 
@@ -26,6 +26,13 @@ They auto-load when you run `cd eng && claude`. Servers without API keys will si
 | **Context7** | `CONTEXT7_API_KEY` | [context7.com](https://context7.com) (free) | All implementation skills |
 | **Firecrawl** | `FIRECRAWL_API_KEY` | [firecrawl.dev](https://firecrawl.dev) | `/analyze` research |
 | **GitHub** | `GITHUB_TOKEN` | GitHub PAT (Personal Access Token) | Branch/PR management |
+| **21st-dev Magic** | `TWENTY_FIRST_API_KEY` | [21st.dev/magic/console](https://21st.dev/magic/console) (beta, free) | `/prototype` UI components |
+
+### Initial Setup Required
+
+| MCP Server | Setup Steps | Skill Integration |
+|------------|------------|-------------------|
+| **Design Inspiration** | Clone + build `tools/design-inspiration-mcp` + `SERPER_API_KEY` | `/prototype` design references |
 
 ## Setting Up API Keys
 
@@ -36,6 +43,7 @@ Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 ```bash
 export FIRECRAWL_API_KEY="your-key-here"
 export GITHUB_TOKEN="your-pat-here"
+export SERPER_API_KEY="your-key-here"
 ```
 
 ### 2. Via Claude Code Config
@@ -54,9 +62,24 @@ Context7 can work without a separate API key. If needed, get a free key at [cont
 2. Select `repo` scope
 3. Set as environment variable: `export GITHUB_TOKEN="ghp_..."`
 
-### 5. Vercel / Supabase
+### 5. Vercel
 
 OAuth-based — a browser login window will appear on first use. No separate key setup needed.
+
+### 6. 21st-dev Magic
+
+1. Go to [21st.dev/magic/console](https://21st.dev/magic/console)
+2. Sign up and get your API key (beta, free)
+3. Set as environment variable: `export TWENTY_FIRST_API_KEY="your-key-here"`
+
+### 7. Design Inspiration
+
+1. Clone and build the Design Inspiration MCP server:
+   ```bash
+   cd tools/design-inspiration-mcp && npm install && npm run build
+   ```
+2. Get a Serper API key at [serper.dev](https://serper.dev)
+3. Set as environment variable: `export SERPER_API_KEY="your-key-here"`
 
 ## Pipeline MCP Usage Flow
 
@@ -67,6 +90,9 @@ OAuth-based — a browser login window will appear on first use. No separate key
   └── Context7 → Latest documentation reference
 
 /prototype
+  ├── Design Inspiration → Dribbble/Behance/Awwwards reference search
+  ├── 21st-dev Magic → UI component inspiration + generation
+  ├── v0 → AI prototype code generation
   ├── Firecrawl → Competitor app UI reference crawling
   └── Context7 → Latest framework docs
 
@@ -82,25 +108,5 @@ OAuth-based — a browser login window will appear on first use. No separate key
 ```
 
 ## Additional MCPs (Manual Install)
-
-These MCPs are not included by default but can be added to `.mcp.json`.
-
-### v0 (Vercel Design AI)
-
-```json
-{
-  "v0": {
-    "command": "npx",
-    "args": ["-y", "@anthropic-ai/v0-mcp"]
-  }
-}
-```
-- Used in `/prototype` for AI design generation
-
-### Design Inspiration
-
-Design reference search MCP. Search the community MCP registry for options.
-
-### Others
 
 Find more MCPs at the [MCP Server Directory](https://github.com/modelcontextprotocol/servers).

@@ -22,13 +22,25 @@
     "vercel": {
       "url": "https://mcp.vercel.com"
     },
-    "supabase": {
-      "url": "https://mcp.supabase.com/mcp"
-    },
     "github": {
       "url": "https://api.githubcopilot.com/mcp/",
       "headers": {
         "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "v0": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/v0-mcp"]
+    },
+    "21st-dev-magic": {
+      "command": "npx",
+      "args": ["-y", "@21st-dev/magic-mcp"]
+    },
+    "design-inspiration": {
+      "command": "node",
+      "args": ["../tools/design-inspiration-mcp/dist/index.js"],
+      "env": {
+        "SERPER_API_KEY": ""
       }
     }
   }

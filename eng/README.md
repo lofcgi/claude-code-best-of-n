@@ -39,12 +39,15 @@ These accounts are only needed at the `/implement` and `/ship` stages — you ca
 </details>
 
 <details>
-<summary><strong>Optional API keys (improve analysis quality, not required)</strong></summary>
+<summary><strong>MCP server setup (optional, improves prototype & analysis quality)</strong></summary>
 
-| Key | Purpose |
-|-----|---------|
-| Firecrawl API key | Better web research during `/analyze` |
-| GitHub PAT | Branch/PR management via MCP |
+| MCP Server | Setup | Notes |
+|------------|-------|-------|
+| v0 | No setup needed | Auto-configured via npx |
+| 21st-dev Magic | Get API key at [21st.dev/magic/console](https://21st.dev/magic/console) | Beta, free |
+| Design Inspiration | `cd tools/design-inspiration-mcp && npm install && npm run build` + [Serper API key](https://serper.dev) | Design reference search |
+| Firecrawl | [firecrawl.dev](https://firecrawl.dev) API key | Better web research during `/analyze` |
+| GitHub | GitHub PAT | Branch/PR management via MCP |
 
 </details>
 
@@ -174,17 +177,19 @@ eng/
 
 ## MCP Servers
 
-7 MCP servers are included in `.mcp.json` and auto-load when you run `cd eng && claude`.
+9 MCP servers are included in `.mcp.json` and auto-load when you run `cd eng && claude`.
 
 | MCP Server | Purpose | Setup |
 |------------|---------|-------|
 | Sequential Thinking | Step-by-step PRD analysis | Zero config |
 | Playwright | Automated browser testing | Zero config |
+| v0 | AI prototype code generation | Zero config (npx) |
 | Vercel | Deploy via MCP | OAuth |
-| Supabase | DB management | OAuth |
 | Context7 | Latest docs reference | API key (free) |
 | Firecrawl | Web crawling/research | API key |
 | GitHub | Branch/PR management | PAT |
+| 21st-dev Magic | UI component inspiration + generation | API key (21st.dev, beta free) |
+| Design Inspiration | Dribbble/Behance/Awwwards reference search | Clone + build + Serper API key |
 
 API key setup and details: [docs/mcp-guide.md](docs/mcp-guide.md)
 

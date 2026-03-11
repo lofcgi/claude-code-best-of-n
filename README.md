@@ -65,7 +65,7 @@ Each folder is a **fully independent, self-contained pipeline**. You can delete 
 
 ## MCP Servers
 
-7 MCP servers included (Sequential Thinking, Playwright, Context7, Firecrawl, Vercel, Supabase, GitHub) — auto-loaded via `.mcp.json`. See [kor/docs/mcp-guide.md](kor/docs/mcp-guide.md) or [eng/docs/mcp-guide.md](eng/docs/mcp-guide.md) for details.
+9 MCP servers included (Sequential Thinking, Playwright, v0, Context7, Firecrawl, Vercel, GitHub, 21st-dev Magic, Design Inspiration) — auto-loaded via `.mcp.json`. See [kor/docs/mcp-guide.md](kor/docs/mcp-guide.md) or [eng/docs/mcp-guide.md](eng/docs/mcp-guide.md) for details.
 
 ## Prerequisites / 사전 요구사항
 
