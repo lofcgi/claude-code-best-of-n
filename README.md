@@ -1,8 +1,8 @@
 # AI Agent Pipeline
 
-> The world's first open-source Best-of-N parallel implementation pipeline powered by AI coding agents.
+> Open-source Best-of-N parallel implementation pipeline powered by AI coding agents.
 >
-> 세계 최초 오픈소스 Best-of-N 병렬 구현 파이프라인. AI 코딩 에이전트로 구동됩니다.
+> 오픈소스 Best-of-N 병렬 구현 파이프라인. AI 코딩 에이전트로 구동됩니다.
 
 Drop a PRD/PDF, run Claude Code skills, and get 3 competing full-stack implementations evaluated and merged into one polished product.
 
