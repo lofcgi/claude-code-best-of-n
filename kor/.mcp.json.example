@@ -51,6 +51,13 @@
         "TWENTY_FIRST_API_KEY": "${TWENTY_FIRST_API_KEY}"
       }
     },
+    "unsplash": {
+      "command": "npx",
+      "args": ["-y", "@jeff_kit/unsplash-mcp-server"],
+      "env": {
+        "UNSPLASH_ACCESS_KEY": "${UNSPLASH_ACCESS_KEY}"
+      }
+    },
     "design-inspiration": {
       "command": "npx",
       "args": ["-y", "collectui-mcp"]
