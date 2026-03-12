@@ -1,4 +1,5 @@
 {
+  "_readme": "Copy this file to .mcp.json and set API keys as environment variables. cp .mcp.json.example .mcp.json",
   "mcpServers": {
     "sequential-thinking": {
       "command": "npx",
@@ -16,7 +17,7 @@
       "command": "npx",
       "args": ["-y", "firecrawl-mcp"],
       "env": {
-        "FIRECRAWL_API_KEY": ""
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
       }
     },
     "vercel": {
@@ -24,29 +25,35 @@
       "url": "https://mcp.vercel.com"
     },
     "github": {
-      "type": "sse",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
     "v0": {
       "command": "npx",
-      "args": ["-y", "@anthropic-ai/v0-mcp"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.v0.dev",
+        "--header",
+        "Authorization: Bearer ${V0_API_KEY}"
+      ],
+      "env": {
+        "V0_API_KEY": "${V0_API_KEY}"
+      }
     },
     "21st-dev-magic": {
       "command": "npx",
-      "args": ["-y", "@21st-dev/magic-mcp"],
+      "args": ["-y", "@21st-dev/magic"],
       "env": {
-        "TWENTY_FIRST_API_KEY": ""
+        "TWENTY_FIRST_API_KEY": "${TWENTY_FIRST_API_KEY}"
       }
     },
     "design-inspiration": {
       "command": "npx",
-      "args": ["-y", "design-inspiration-mcp"],
-      "env": {
-        "SERPER_API_KEY": ""
-      }
+      "args": ["-y", "collectui-mcp"]
     }
   }
 }

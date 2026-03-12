@@ -45,7 +45,7 @@ git --version
 |----------|------|------|
 | v0 | 설정 불필요 | npx로 자동 설정 |
 | 21st-dev Magic | [21st.dev/magic/console](https://21st.dev/magic/console)에서 API 키 발급 | 베타, 무료 |
-| Design Inspiration | `cd tools/design-inspiration-mcp && npm install && npm run build` + [Serper API 키](https://serper.dev) | 디자인 레퍼런스 검색 |
+| Design Inspiration | [Serper API 키](https://serper.dev) | 디자인 레퍼런스 검색 (npx, 자동 설정) |
 | Firecrawl | [firecrawl.dev](https://firecrawl.dev) API 키 | `/analyze` 시 웹 리서치 품질 향상 |
 | GitHub | GitHub PAT | MCP를 통한 브랜치/PR 관리 |
 
@@ -173,6 +173,8 @@ kor/
 | `/select-winner` | 최적 버전을 project/로 복사 |
 | `/ship` | 배포 및 문서 생성 |
 | `/promote <플랫폼>` | 홍보 콘텐츠 생성 (velog, devto, reddit, twitter, geek, hn) |
+| `/implement` | 프로토타입 기반 풀스택 앱 구현 (`/setup-versions`가 동적 생성) |
+| `/polish` | UI/UX 개선 및 코드 리뷰 (`/select-winner`가 동적 생성) |
 | `/devlog` | 개발 로그 자동 기록 |
 
 ## MCP 서버
@@ -189,7 +191,7 @@ kor/
 | Firecrawl | 웹 크롤링/리서치 | API 키 |
 | GitHub | 브랜치/PR 관리 | PAT |
 | 21st-dev Magic | UI 컴포넌트 영감 + 생성 | API 키 (21st.dev, 베타 무료) |
-| Design Inspiration | Dribbble/Behance/Awwwards 레퍼런스 검색 | Clone + build + Serper API 키 |
+| Design Inspiration | Dribbble/Behance/Awwwards 레퍼런스 검색 | API 키 (Serper) |
 
 API 키 설정 및 상세 안내: [docs/mcp-guide.md](docs/mcp-guide.md)
 

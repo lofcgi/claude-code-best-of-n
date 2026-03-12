@@ -45,7 +45,7 @@ These accounts are only needed at the `/implement` and `/ship` stages — you ca
 |------------|-------|-------|
 | v0 | No setup needed | Auto-configured via npx |
 | 21st-dev Magic | Get API key at [21st.dev/magic/console](https://21st.dev/magic/console) | Beta, free |
-| Design Inspiration | `cd tools/design-inspiration-mcp && npm install && npm run build` + [Serper API key](https://serper.dev) | Design reference search |
+| Design Inspiration | [Serper API key](https://serper.dev) | Design reference search (npx, auto-configured) |
 | Firecrawl | [firecrawl.dev](https://firecrawl.dev) API key | Better web research during `/analyze` |
 | GitHub | GitHub PAT | Branch/PR management via MCP |
 
@@ -173,6 +173,8 @@ eng/
 | `/select-winner` | Copy winning version to project/ |
 | `/ship` | Deploy and generate documentation |
 | `/promote <platform>` | Generate promotional content (velog, devto, reddit, twitter, geek, hn) |
+| `/implement` | Build full-stack app from prototype (created by `/setup-versions`) |
+| `/polish` | UI/UX refinement and code review (created by `/select-winner`) |
 | `/devlog` | Auto-generate development log entry |
 
 ## MCP Servers
@@ -189,7 +191,7 @@ eng/
 | Firecrawl | Web crawling/research | API key |
 | GitHub | Branch/PR management | PAT |
 | 21st-dev Magic | UI component inspiration + generation | API key (21st.dev, beta free) |
-| Design Inspiration | Dribbble/Behance/Awwwards reference search | Clone + build + Serper API key |
+| Design Inspiration | Dribbble/Behance/Awwwards reference search | API key (Serper) |
 
 API key setup and details: [docs/mcp-guide.md](docs/mcp-guide.md)
 

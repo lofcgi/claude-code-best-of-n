@@ -28,11 +28,11 @@ They auto-load when you run `cd eng && claude`. Servers without API keys will si
 | **GitHub** | `GITHUB_TOKEN` | GitHub PAT (Personal Access Token) | Branch/PR management |
 | **21st-dev Magic** | `TWENTY_FIRST_API_KEY` | [21st.dev/magic/console](https://21st.dev/magic/console) (beta, free) | `/prototype` UI components |
 
-### Initial Setup Required
+### API Key Required (continued)
 
-| MCP Server | Setup Steps | Skill Integration |
-|------------|------------|-------------------|
-| **Design Inspiration** | Clone + build `tools/design-inspiration-mcp` + `SERPER_API_KEY` | `/prototype` design references |
+| MCP Server | Required Key | Where to Get It | Skill Integration |
+|------------|-------------|-----------------|-------------------|
+| **Design Inspiration** | `SERPER_API_KEY` | [serper.dev](https://serper.dev) | `/prototype` design references |
 
 ## Setting Up API Keys
 
@@ -44,6 +44,7 @@ Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 export FIRECRAWL_API_KEY="your-key-here"
 export GITHUB_TOKEN="your-pat-here"
 export SERPER_API_KEY="your-key-here"
+export TWENTY_FIRST_API_KEY="your-key-here"
 ```
 
 ### 2. Via Claude Code Config
@@ -74,12 +75,9 @@ OAuth-based — a browser login window will appear on first use. No separate key
 
 ### 7. Design Inspiration
 
-1. Clone and build the Design Inspiration MCP server:
-   ```bash
-   cd tools/design-inspiration-mcp && npm install && npm run build
-   ```
-2. Get a Serper API key at [serper.dev](https://serper.dev)
-3. Set as environment variable: `export SERPER_API_KEY="your-key-here"`
+1. Get a Serper API key at [serper.dev](https://serper.dev)
+2. Set as environment variable: `export SERPER_API_KEY="your-key-here"`
+3. The MCP server runs automatically via npx — no build step needed
 
 ## Pipeline MCP Usage Flow
 
