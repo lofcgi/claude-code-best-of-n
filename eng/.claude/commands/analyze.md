@@ -10,15 +10,40 @@ Analyze all PDF or markdown files in the input/ folder.
 1. Verify that input/ folder contains PDF or markdown files
    → If empty, display "Please add a PRD file to the input/ folder" and stop
 
-2. Check MCP connection status and display summary:
-   | MCP Server | Status | Impact When Missing |
-   |------------|--------|---------------------|
-   | Sequential Thinking | ✅/❌ | PRD analysis will be simpler |
-   | Firecrawl | ✅/❌ | Competitor research skipped |
-   | Context7 | ✅/❌ | Cannot reference latest docs |
+2. **Environment Variable & MCP Live Verification** (must follow this order):
+
+   a) Check required environment variables via Bash:
+      ```bash
+      echo "FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:+set}"
+      ```
+      → If output is empty, that environment variable is ❌
+
+   b) Test each MCP server with a real call (verify tools actually work):
+      - Sequential Thinking: call `sequentialthinking` (thought: "test", thoughtNumber: 1, totalThoughts: 1, nextThoughtNeeded: false)
+      - Firecrawl: call `firecrawl_scrape` (url: "https://example.com", formats: ["markdown"])
+      - Context7: call `resolve-library-id` (libraryName: "react", query: "test")
+      → If each call returns without error ✅, if error occurs ❌
+
+   c) Display results in a table:
+      | MCP Server | Env Var | Test Call | Final | Required | Impact When Missing |
+      |------------|---------|-----------|-------|----------|---------------------|
+      | Sequential Thinking | N/A | ✅/❌ | ✅/❌ | **Required** | PRD analysis will be simpler |
+      | Firecrawl | ✅/❌ | ✅/❌ | ✅/❌ | **Required** | Competitor research unavailable |
+      | Context7 | N/A | ✅/❌ | ✅/❌ | **Required** | Cannot reference latest docs |
+
+> **⛔ CRITICAL: If any Final status is ❌ — stop immediately.**
+> **Never bypass with "proceeding without", "skipping", etc.**
+> Display the following guidance and do NOT begin analysis:
+> 1. Check if `.mcp.json` exists → if not, run `cp .mcp.json.example .mcp.json`
+> 2. Set required API key environment variables:
+>    - `FIRECRAWL_API_KEY` — free at https://firecrawl.dev
+> 3. Restart Claude Code (exit → claude)
+> 4. Approve MCP server connection prompts → approve all
+> 5. Verify all 3 servers show ✅ with `/mcp` command
+> 6. Run `/analyze` again
 
 3. Pipeline environment variable guidance:
-   - analyze → prototype → setup-versions: No additional setup required
+   - analyze → prototype: **FIRECRAWL_API_KEY required** (+ prototype needs SERPER_API_KEY, TWENTY_FIRST_API_KEY)
    - From /implement: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN
    - /ship: Vercel login, AUTH_SECRET
    - "You don't need to prepare these now. You'll be reminded at each stage."
@@ -32,12 +57,10 @@ Analyze all PDF or markdown files in the input/ folder.
 1. **Analyze PRD with Sequential Thinking** (if MCP available):
    - Use Sequential Thinking tool to analyze the PRD step by step
    - Systematically decompose complex requirements
-   → If MCP unavailable: Fall back to standard analysis. Generate the same deliverables directly.
 
 2. **Competitor Research with Firecrawl** (if MCP available):
    - If the PRD mentions competitor products or reference services, crawl them with Firecrawl
    - Analyze their tech stack, UI patterns, and feature composition to inform analysis/
-   → If MCP unavailable: Skip this step and proceed. Inform the user: "Skipping competitor research — Firecrawl not connected."
 
 3. Read all files in input/
 4. Generate the following files in analysis/:

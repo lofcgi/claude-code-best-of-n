@@ -10,15 +10,40 @@ input/ 폴더에 있는 PDF 또는 마크다운 파일을 분석하세요.
 1. input/ 폴더에 PDF 또는 마크다운 파일이 있는지 확인
    → 없으면 "input/ 폴더에 PRD 파일을 넣어주세요" 안내 후 중단
 
-2. MCP 연결 상태 확인 후 요약 출력:
-   | MCP 서버 | 상태 | 없을 때 영향 |
-   |----------|------|-------------|
-   | Sequential Thinking | ✅/❌ | PRD 분석이 단순해짐 |
-   | Firecrawl | ✅/❌ | 경쟁 리서치 스킵됨 |
-   | Context7 | ✅/❌ | 최신 문서 참조 불가 |
+2. **환경변수 및 MCP 실제 동작 검증** (반드시 아래 순서대로):
+
+   a) Bash로 필수 환경변수 존재 확인:
+      ```bash
+      echo "FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:+설정됨}"
+      ```
+      → 출력이 비어있으면 해당 환경변수 ❌
+
+   b) 각 MCP 서버 테스트 호출 (도구가 실제로 동작하는지 확인):
+      - Sequential Thinking: `sequentialthinking` 호출 (thought: "test", thoughtNumber: 1, totalThoughts: 1, nextThoughtNeeded: false)
+      - Firecrawl: `firecrawl_scrape` 호출 (url: "https://example.com", formats: ["markdown"])
+      - Context7: `resolve-library-id` 호출 (libraryName: "react", query: "test")
+      → 각 호출이 에러 없이 응답하면 ✅, 에러 발생 시 ❌
+
+   c) 결과를 표로 출력:
+      | MCP 서버 | 환경변수 | 테스트 호출 | 최종 | 필수 | 없을 때 영향 |
+      |----------|----------|-----------|------|------|-------------|
+      | Sequential Thinking | N/A | ✅/❌ | ✅/❌ | **필수** | PRD 분석이 단순해짐 |
+      | Firecrawl | ✅/❌ | ✅/❌ | ✅/❌ | **필수** | 경쟁 리서치 불가 |
+      | Context7 | N/A | ✅/❌ | ✅/❌ | **필수** | 최신 문서 참조 불가 |
+
+> **⛔ CRITICAL: 최종 상태가 하나라도 ❌이면 — 즉시 중단.**
+> **절대로 "없이 진행합니다", "스킵합니다" 등으로 우회하지 말 것.**
+> 아래 안내를 출력하고 분석을 시작하지 말 것:
+> 1. `.mcp.json` 파일이 있는지 확인 → 없으면 `cp .mcp.json.example .mcp.json`
+> 2. 필요한 API 키 환경변수 설정:
+>    - `FIRECRAWL_API_KEY` — https://firecrawl.dev 에서 무료 발급
+> 3. Claude Code 재시작 (exit → claude)
+> 4. MCP 서버 연결 승인 프롬프트 → 모두 승인
+> 5. `/mcp` 명령으로 3개 서버 모두 ✅인지 확인
+> 6. 다시 `/analyze` 실행
 
 3. 이후 파이프라인 환경변수 안내:
-   - analyze → prototype → setup-versions: 추가 설정 불필요
+   - analyze → prototype: **FIRECRAWL_API_KEY 필수** (+ prototype에서 SERPER_API_KEY, TWENTY_FIRST_API_KEY 추가 필요)
    - /implement부터: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN
    - /ship: Vercel 로그인, AUTH_SECRET
    - "지금 준비하지 않아도 됩니다. 해당 단계에서 다시 안내합니다."
@@ -32,12 +57,10 @@ input/ 폴더에 있는 PDF 또는 마크다운 파일을 분석하세요.
 1. **Sequential Thinking으로 PRD 분석** (MCP 사용 가능 시):
    - Sequential Thinking 도구를 사용하여 PRD를 단계별로 분석
    - 복잡한 요구사항을 체계적으로 분해
-   → MCP 불가 시: 일반 분석으로 대체. 동일한 결과물을 직접 생성.
 
 2. **Firecrawl로 경쟁 리서치** (MCP 사용 가능 시):
    - PRD에 언급된 경쟁 제품이나 참고 서비스가 있으면 Firecrawl로 크롤링
    - 기술 스택, UI 패턴, 기능 구성을 분석하여 analysis/에 반영
-   → MCP 불가 시: 이 단계를 스킵하고 다음으로 진행. 사용자에게 "Firecrawl 미연결로 경쟁 리서치를 건너뜁니다" 안내.
 
 3. input/ 폴더의 모든 파일을 읽기
 4. 다음 파일들을 analysis/ 폴더에 생성:
