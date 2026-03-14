@@ -7,10 +7,13 @@ Read analysis/prd.md and generate 3 UI interface prototypes.
 
 ## Core Philosophy
 
-**Three pillars to break free from "generic AI-generated" designs:**
+**Four pillars to break free from "generic AI-generated" designs:**
 1. **Reference-based generation** — Extract section compositions from professional sites and follow their structure
 2. **Image-first** — 60% of a professional site's visual richness comes from images. Sections with only text + icons are prohibited
 3. **Specific content** — No round numbers or cliche copy. Use specific metrics + brand-unique expressions
+4. **Visual density** — Single-layer backgrounds / conservative typography / basic buttons are AI slop indicators.
+   You must follow `prototype-references/visual-architecture.md` and
+   `prototype-references/aesthetics-guide.md`.
 
 ## Pre-checks (perform first)
 
@@ -68,6 +71,14 @@ Read analysis/prd.md and generate 3 UI interface prototypes.
 ---
 
 ## Phase 1: Research (output: `prototypes/research.md`)
+
+### ⚠️ Context Management Rules (mandatory — violation causes context explosion)
+- MCP calls: **max 2 in parallel** (never 3+ simultaneous calls)
+- **Immediately** after receiving each MCP response, summarize key points in the relevant section of `prototypes/research.md`
+- Only proceed to the next MCP call batch after recording is complete (do not accumulate responses in context)
+- For `firecrawl_scrape`, use only `formats: ["markdown"]` (remove `"branding"` format — cuts response size in half)
+- `onlyMainContent: true` is mandatory
+- For 21st-dev and Unsplash responses, extract only needed URLs/names and immediately write to file
 
 1. Read analysis/prd.md and analysis/requirements.json.
 
@@ -173,6 +184,14 @@ Read analysis/prd.md and generate 3 UI interface prototypes.
     - Cliche copy ("innovative", "next-gen", "all-in-one") (→ brand-unique expressions)
     - Feature cards with only text+icons (→ images or CSS visuals required)
     - 5-6 section layouts (→ minimum 8 sections)
+    - Hero background is a single CSS gradient (→ 5-layer required)
+    - text-4xl/text-5xl Hero headlines (→ text-6xl md:text-8xl font-black)
+    - Basic filled/ghost buttons (→ glow box-shadow 30px+ required)
+    - py-24/py-32 section padding (→ py-40 minimum)
+    - BrowserMockup without 3D (→ perspective + tinted shadow required)
+    - Inter/Roboto/Arial fonts (→ see aesthetics-guide.md)
+    - Feature cards without images (→ images or CSS visuals required)
+    - Equal distribution palette (→ dominant + sharp accent)
     ```
 
 11. **Capture reference app screenshots with Playwright and save them**:
@@ -322,6 +341,18 @@ e) **Create `components/premium/` directory**:
    ```
    Premium Aceternity/Magic UI component code will be placed in this directory during Phase 4.
 
+e2) **Create premium background effect components**:
+   Read `.claude/commands/prototype-references/premium-components.md` and
+   create the following components in `components/premium/` by copying the reference code exactly:
+   - background-beams.tsx (SVG beams + pathLength)
+   - lamp-effect.tsx (conic-gradient expansion)
+   - aurora-background.tsx (3-layer aurora)
+   - meteors.tsx (meteor effect)
+   - sparkles.tsx (floating particles)
+   - gradient-text.tsx (gradient clip text)
+   - floating-dock.tsx (bottom dock navigation)
+   **⛔ Do not simplify or omit** — copy the reference code exactly.
+
 f) **Append premium utility CSS to `app/globals.css`** (after existing styles):
    ```css
    /* === Premium Visual Utilities === */
@@ -403,6 +434,42 @@ f) **Append premium utility CSS to `app/globals.css`** (after existing styles):
    .glow-hover:hover {
      box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.5);
    }
+
+   /* Primary Glow (for CTA buttons — 30px + 60px dual layer) */
+   .glow-primary {
+     box-shadow: 0 0 30px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.2);
+   }
+   .glow-primary:hover {
+     box-shadow: 0 0 40px hsl(var(--primary) / 0.5), 0 0 80px hsl(var(--primary) / 0.3);
+   }
+
+   /* Meteor animation */
+   @keyframes meteor {
+     0% { transform: rotate(215deg) translateX(0); opacity: 1; }
+     70% { opacity: 1; }
+     100% { transform: rotate(215deg) translateX(-600px); opacity: 0; }
+   }
+   .animate-meteor {
+     animation: meteor 3s linear infinite;
+   }
+
+   /* Gradient Text animation */
+   @keyframes gradient-x {
+     0%, 100% { background-position: 0% 50%; }
+     50% { background-position: 100% 50%; }
+   }
+   .animate-gradient-x {
+     animation: gradient-x 3s ease infinite;
+   }
+
+   /* Sparkle Float animation */
+   @keyframes sparkle-float {
+     0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+     50% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+   }
+   .animate-sparkle-float {
+     animation: sparkle-float 3s ease-in-out infinite;
+   }
    ```
 
 g) **Extend `lib/utils.ts`** — add utility functions beyond the existing `cn()`:
@@ -456,6 +523,29 @@ h) **🆕 Auto-generate `lib/design-tokens.ts`** (research.md → code constants
 1. **Generate app pages first** (app/{x}/app/page.tsx, etc.)
 2. Capture app page screenshots in Phase 4.5
 3. **Generate landing pages** — insert app screenshots into BrowserMockup
+
+### ⛔ Mandatory References Before Code Generation (Non-negotiable)
+1. Read `.claude/commands/prototype-references/visual-architecture.md`
+2. Read `.claude/commands/prototype-references/aesthetics-guide.md`
+3. Follow the code patterns in those files exactly
+
+### Hero Visual Density Rules
+- Implement the "Hero 5-Layer Architecture" section from visual-architecture.md exactly
+- Heroes with fewer than 5 layers are strictly prohibited
+- Each concept must use a different Layer 2 component (A: BackgroundBeams, B: AuroraBackground, C: LampEffect)
+
+### Typography Rules
+- Follow the "Typography Hierarchy" from visual-architecture.md
+- Hero headline: text-6xl md:text-8xl font-black (text-5xl or below is prohibited)
+- GradientText is required — wrap key keywords
+
+### CTA Rules
+- Follow the "CTA Button Premium" code pattern from visual-architecture.md
+- Basic filled buttons are prohibited — glow box-shadow required (30px + 60px dual layer)
+
+### BrowserMockup Rules
+- Follow "BrowserMockup Premium" from visual-architecture.md
+- 3D perspective or color-tinted shadow required (flat mockup prohibited)
 
 ### Preparation: Fetch premium component code via Context7
 
@@ -528,7 +618,7 @@ For each section:
 - Asymmetry: at least 2 sections must use off-center, asymmetric layouts.
 - Hover: all interactive elements must have transform on hover.
 - Grain: all gradient backgrounds must have a noise overlay (opacity 0.015-0.03).
-- Spacing: section padding minimum py-32. Hero must be min-h-screen.
+- Spacing: section padding minimum py-40 (py-24/py-32 prohibited). Hero must be min-h-screen.
 - Floating navigation: glass-morphism (backdrop-blur-md, bg-white/5, border-white/10)
 
 ### Execution Procedure
@@ -594,14 +684,21 @@ Read each landing page's code with Read and check:
 
 → Fix code for any failed items
 
-### Round 2 — Visual Asset Verification:
+### Round 2 — Visual Asset + Premium Quality Verification:
 - □ 5+ images used?
 - □ Zero text+icon-only cards?
 - □ 3+ avatar images?
 - □ 3+ sections with CSS gradient/pattern backgrounds?
 - □ At least 1 BrowserMockup?
+- □ Hero has 5+ visual layers? (base + effect + pattern + glow + particles)
+- □ Hero headline text-6xl md:text-8xl?
+- □ GradientText used?
+- □ CTA has glow box-shadow?
+- □ All sections py-40+?
+- □ BrowserMockup has 3D perspective or tinted shadow?
+- □ Font is not Inter/Roboto/Arial?
 
-→ Add images/visuals for any failed items
+→ Fix code and add images/visuals for any failed items
 
 ### Round 3 — Content Verification:
 - □ Specific figures used instead of round numbers (10,000, 100%)?
@@ -696,13 +793,20 @@ Read each landing page's code with Read and check:
    [ ] Floating/glass-morphism navigation present
    [ ] BrowserMockup displays app screenshot
 
-   **Visual Depth (5 of 6 must pass)**
+   **Visual Depth (10 of 13 must pass)**
    [ ] Hero has layered background (gradient + pattern + particles/decoration)
    [ ] Grain/noise texture present on gradient sections
    [ ] Card hover spotlight/glow effect working
    [ ] At least 1 section with parallax or scroll-reveal effect
    [ ] Background decoration elements present (blobs, beams, dots, meteors)
    [ ] 5+ images used (Unsplash/screenshots)
+   [ ] Hero has 5+ visual layers (base + effect + pattern + glow + particles)
+   [ ] Hero headline 72px+ (text-6xl md:text-8xl)
+   [ ] Key keywords highlighted with GradientText
+   [ ] CTA has glow effect (box-shadow 30px+)
+   [ ] Section padding py-40+ (no py-24/py-32)
+   [ ] BrowserMockup has perspective/tinted shadow
+   [ ] Font is not AI slop default (Inter/Roboto)
 
    **Content (3 of 4 must pass)**
    [ ] Specific figures used (no round numbers)
