@@ -210,3 +210,55 @@ Cards with only text + icons are strictly prohibited. Each Feature card must inc
 - **border glow**: `borderColor: ${p.primary}40`
 - **scale**: `scale(1.02)`
 - **image zoom**: `group-hover:scale-105`
+
+---
+
+## Visual Density Rules Per Section Type (Minimum Requirements)
+
+All sections must meet the minimum visual density below. See `section-templates.md` for detailed code patterns.
+
+| Section Type | Min Layers | Image Required | Decorative Elements | Hover Effects |
+|----------|-----------|-----------|----------|----------|
+| Hero | 5 | 1 BrowserMockup | Sparkles/Meteors | N/A |
+| Trust Metrics | 2 | Optional | NumberTicker glow | N/A |
+| Feature BentoGrid | 2 | 1 per card | SpotlightCard | border glow + scale |
+| Feature Spotlight | 2 | 1 per card | Spotlight cursor | border glow + scale |
+| Comparison Table | 2 | Optional | gradient header | row hover |
+| Testimonial | 2 | 64px avatar | Optional | card lift |
+| Process Steps | 2 | Screenshot per step | Number glow | N/A |
+| Stats | 2 + Sparkles | Optional | Full-bleed gradient | N/A |
+| Client Logos | 1 | Logos | marquee | grayscale→color |
+| FAQ | 2 | Optional | accordion spring | open/close |
+| Pricing | 2 | Optional | Center card glow | card scale |
+| Footer CTA | 2 + decorations | Optional | BackgroundBeams | CTA glow |
+
+### SectionWrapper Required
+
+All sections must use `SectionWrapper` or an equivalent minimum 2-layer background:
+- Layer 1: Base gradient or pattern
+- Layer 2: Radial accent glow
+- Layer 3: Noise texture (optional)
+- Content: Wrapped with scroll-reveal animation
+
+### Section Transitions
+
+Use gradient dividers between sections for visual separation:
+```tsx
+<div
+  className="h-px w-full"
+  style={{ background: `linear-gradient(90deg, transparent, ${p.primary}30, transparent)` }}
+/>
+```
+
+### Maintaining Visual Depth After Hero
+
+**Problem**: Hero has 5 layers, but remaining sections collapse to flat background + text, causing "visual depth collapse."
+
+**Solution**:
+1. Apply SectionWrapper to all sections (minimum 2 layers)
+2. Place a "visual anchor" section every 3-4 sections:
+   - Stats: Full-bleed gradient + Sparkles
+   - Product Demo: BrowserMockup + tinted shadow
+   - Footer CTA: BackgroundBeams + large headline
+3. Feature cards must include images (text + icon only is prohibited)
+4. Testimonials must include 64px avatar images

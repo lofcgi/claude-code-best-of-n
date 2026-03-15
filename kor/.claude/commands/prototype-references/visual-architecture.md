@@ -210,3 +210,55 @@ Gradient가 있는 모든 섹션에 bg-noise 클래스를 적용하라.
 - **border glow**: `borderColor: ${p.primary}40`
 - **scale**: `scale(1.02)`
 - **이미지 zoom**: `group-hover:scale-105`
+
+---
+
+## 섹션 타입별 비주얼 밀도 규칙 (최소 요구사항)
+
+모든 섹션은 아래 최소 비주얼 밀도를 충족해야 한다. 자세한 코드 패턴은 `section-templates.md` 참조.
+
+| 섹션 타입 | 최소 레이어 | 이미지 필수 | 장식 요소 | 호버 효과 |
+|----------|-----------|-----------|----------|----------|
+| Hero | 5 | BrowserMockup 1개 | Sparkles/Meteors | N/A |
+| Trust Metrics | 2 | 선택 | NumberTicker glow | N/A |
+| Feature BentoGrid | 2 | 카드당 1개 | SpotlightCard | border glow + scale |
+| Feature Spotlight | 2 | 카드당 1개 | Spotlight 커서 | border glow + scale |
+| Comparison Table | 2 | 선택 | gradient header | row hover |
+| Testimonial | 2 | 아바타 64px | 선택 | card lift |
+| Process Steps | 2 | 단계당 스크린샷 | 번호 glow | N/A |
+| Stats | 2 + Sparkles | 선택 | 풀블리드 gradient | N/A |
+| Client Logos | 1 | 로고 | marquee | grayscale→color |
+| FAQ | 2 | 선택 | accordion spring | open/close |
+| Pricing | 2 | 선택 | 중앙 카드 glow | card scale |
+| Footer CTA | 2 + 장식 | 선택 | BackgroundBeams | CTA glow |
+
+### SectionWrapper 필수
+
+모든 섹션은 `SectionWrapper` 또는 동등한 최소 2레이어 배경을 사용해야 한다:
+- Layer 1: Base gradient 또는 pattern
+- Layer 2: Radial accent glow
+- Layer 3: Noise texture (선택)
+- 콘텐츠: scroll-reveal 애니메이션 래핑
+
+### 섹션 간 전환
+
+섹션 사이에 gradient divider를 사용하여 시각적 구분:
+```tsx
+<div
+  className="h-px w-full"
+  style={{ background: `linear-gradient(90deg, transparent, ${p.primary}30, transparent)` }}
+/>
+```
+
+### Hero 이후 비주얼 깊이 유지 규칙
+
+**문제**: Hero는 5레이어지만 나머지 섹션은 단색 배경 + 텍스트로 "비주얼 깊이 붕괴" 발생.
+
+**해결**:
+1. 모든 섹션에 SectionWrapper 적용 (최소 2레이어)
+2. 3-4개 섹션마다 "비주얼 앵커" 섹션 배치:
+   - Stats: 풀블리드 gradient + Sparkles
+   - Product Demo: BrowserMockup + tinted shadow
+   - Footer CTA: BackgroundBeams + 대형 헤드라인
+3. Feature 카드에 반드시 이미지 포함 (텍스트+아이콘만 금지)
+4. Testimonial에 64px 아바타 이미지 필수

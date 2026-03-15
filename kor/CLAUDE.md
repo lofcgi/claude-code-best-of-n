@@ -22,3 +22,12 @@
 - 스킬 실행 시 analysis/의 문서를 항상 참조
 - 파일 수정 시 Prettier 포맷 유지
 - 커밋은 Conventional Commits 형식
+
+## 디자인 시스템 규칙
+- 모든 색상: design-tokens.ts에서 import (인라인 hex 금지)
+- 모든 프리미엄 컴포넌트: components/premium/에서 import (페이지 내 재정의 금지)
+- 모든 섹션: SectionWrapper 또는 최소 2레이어 배경
+- 이미지 없는 Feature 카드 금지
+- Hero 이후 모든 섹션에 최소 1개 시각 요소
+- Spring physics만 사용 (linear 금지)
+- 페이지당 최소 8섹션, 최소 5이미지

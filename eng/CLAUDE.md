@@ -22,3 +22,12 @@ in parallel using Best-of-3 from PRD/PDF input.
 - Always reference analysis/ documents when running skills
 - Maintain Prettier formatting when modifying files
 - Use Conventional Commits format
+
+## Design System Rules
+- All colors: import from design-tokens.ts (no inline hex)
+- All premium components: import from components/premium/ (no page-level redefinition)
+- All sections: SectionWrapper or minimum 2-layer background
+- No Feature cards without images
+- Every section after Hero must have at least 1 visual element
+- Spring physics only (no linear)
+- Minimum 8 sections per page, minimum 5 images
