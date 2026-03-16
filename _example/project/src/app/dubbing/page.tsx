@@ -406,6 +406,9 @@ export default function DubbingPage() {
     const rect = bar.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     el.currentTime = ratio * el.duration;
+    if (videoRef.current) {
+      videoRef.current.currentTime = ratio * el.duration;
+    }
   };
 
   const handleVideoClick = () => {
@@ -653,7 +656,20 @@ export default function DubbingPage() {
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                         Transcription
                       </p>
-                      <p className="text-sm leading-relaxed">{transcription}</p>
+                      <p
+                        className={`text-sm leading-relaxed ${!transcriptionExpanded ? "line-clamp-2" : ""}`}
+                      >
+                        {transcription}
+                      </p>
+                      <button
+                        onClick={() => setTranscriptionExpanded(!transcriptionExpanded)}
+                        className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${transcriptionExpanded ? "rotate-180" : ""}`}
+                        />
+                        {transcriptionExpanded ? "Show less" : "Show more"}
+                      </button>
                     </div>
                   )}
                   {translation && (
@@ -661,7 +677,20 @@ export default function DubbingPage() {
                       <p className="text-xs font-medium text-brand uppercase tracking-wider mb-2">
                         Translation ({LANGUAGES.find((l) => l.code === targetLang)?.name})
                       </p>
-                      <p className="text-sm leading-relaxed">{translation}</p>
+                      <p
+                        className={`text-sm leading-relaxed ${!translationExpanded ? "line-clamp-2" : ""}`}
+                      >
+                        {translation}
+                      </p>
+                      <button
+                        onClick={() => setTranslationExpanded(!translationExpanded)}
+                        className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${translationExpanded ? "rotate-180" : ""}`}
+                        />
+                        {translationExpanded ? "Show less" : "Show more"}
+                      </button>
                     </div>
                   )}
 
