@@ -143,8 +143,8 @@ export default function DubbingPage() {
     if (!ACCEPTED_TYPES.includes(f.type)) {
       return "Unsupported file format. Please use MP3, WAV, MP4, M4A, or WEBM.";
     }
-    if (f.size > 25 * 1024 * 1024) {
-      return "File size exceeds 25MB limit.";
+    if (f.size > 4.5 * 1024 * 1024) {
+      return "File size exceeds 4.5MB limit.";
     }
     return null;
   };
@@ -205,11 +205,22 @@ export default function DubbingPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        let errorMessage = "Dubbing failed";
+        try {
+          const data = await res.json();
+          errorMessage = data.error || errorMessage;
+        } catch {
+          const text = await res.text().catch(() => "");
+          if (res.status === 413 || text.includes("Request Entity Too Large")) {
+            errorMessage = "File too large. Please use a file under 4.5MB.";
+          } else {
+            errorMessage = text || `Server error (${res.status})`;
+          }
+        }
         if (res.status === 429) {
           throw new Error("Too many requests — please wait a moment");
         }
-        throw new Error(data.error || "Dubbing failed");
+        throw new Error(errorMessage);
       }
 
       // Read NDJSON stream for real-time step tracking
