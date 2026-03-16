@@ -15,9 +15,11 @@ import {
   ArrowLeft,
   Pause,
   Mic,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 
 const LANGUAGES = [
@@ -73,6 +75,8 @@ export default function DubbingPage() {
   // Result state
   const [transcription, setTranscription] = useState<string | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
+  const [transcriptionExpanded, setTranscriptionExpanded] = useState(false);
+  const [translationExpanded, setTranslationExpanded] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [resultIsVideo, setResultIsVideo] = useState(false);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
@@ -179,7 +183,7 @@ export default function DubbingPage() {
     if (!file) return;
 
     setIsProcessing(true);
-    setCurrentStep(2); // Start at transcribe step
+    setCurrentStep(1); // Upload step
     setTranscription(null);
     setTranslation(null);
     setAudioUrl(null);
@@ -194,14 +198,24 @@ export default function DubbingPage() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("targetLang", targetLang);
-      formData.append("voiceId", selectedVoice);
+      // Step 1: Upload file to Vercel Blob
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/dubbing/upload",
+      });
 
+      setCurrentStep(2); // Move to transcribe step
+
+      // Step 2: Send blob URL to dubbing API
       const res = await fetch("/api/dubbing", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          targetLang,
+          voiceId: selectedVoice,
+          fileType: file.type,
+        }),
       });
 
       if (!res.ok) {
@@ -292,33 +306,34 @@ export default function DubbingPage() {
     const audio = audioRef.current;
     const video = videoRef.current;
 
-    const syncPlay = () => {
-      video.currentTime = audio.currentTime;
-      video.play().catch(() => {});
-    };
-    const syncPause = () => video.pause();
     const syncSeek = () => {
       video.currentTime = audio.currentTime;
     };
+    const syncTime = () => {
+      if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
+        video.currentTime = audio.currentTime;
+      }
+    };
 
-    audio.addEventListener("play", syncPlay);
-    audio.addEventListener("pause", syncPause);
     audio.addEventListener("seeked", syncSeek);
+    audio.addEventListener("timeupdate", syncTime);
 
     return () => {
-      audio.removeEventListener("play", syncPlay);
-      audio.removeEventListener("pause", syncPause);
       audio.removeEventListener("seeked", syncSeek);
+      audio.removeEventListener("timeupdate", syncTime);
     };
   }, [resultIsVideo, audioUrl, videoObjectUrl]);
 
   const togglePlay = () => {
-    const el = audioRef.current;
-    if (!el) return;
+    const audio = audioRef.current;
+    const video = videoRef.current;
+    if (!audio) return;
     if (isPlaying) {
-      el.pause();
+      audio.pause();
+      video?.pause();
     } else {
-      el.play();
+      audio.play();
+      video?.play().catch(() => {});
     }
     setIsPlaying(!isPlaying);
   };
@@ -381,6 +396,7 @@ export default function DubbingPage() {
     setIsPlaying(false);
     setPlaybackProgress(0);
     setPlaybackTime("0:00");
+    videoRef.current?.pause();
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -568,7 +584,20 @@ export default function DubbingPage() {
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                         Transcription
                       </p>
-                      <p className="text-sm leading-relaxed">{transcription}</p>
+                      <p
+                        className={`text-sm leading-relaxed ${!transcriptionExpanded ? "line-clamp-2" : ""}`}
+                      >
+                        {transcription}
+                      </p>
+                      <button
+                        onClick={() => setTranscriptionExpanded(!transcriptionExpanded)}
+                        className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${transcriptionExpanded ? "rotate-180" : ""}`}
+                        />
+                        {transcriptionExpanded ? "Show less" : "Show more"}
+                      </button>
                     </div>
                   )}
 
@@ -578,7 +607,20 @@ export default function DubbingPage() {
                       <p className="text-xs font-medium text-brand uppercase tracking-wider mb-2">
                         Translation ({LANGUAGES.find((l) => l.code === targetLang)?.name})
                       </p>
-                      <p className="text-sm leading-relaxed">{translation}</p>
+                      <p
+                        className={`text-sm leading-relaxed ${!translationExpanded ? "line-clamp-2" : ""}`}
+                      >
+                        {translation}
+                      </p>
+                      <button
+                        onClick={() => setTranslationExpanded(!translationExpanded)}
+                        className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${translationExpanded ? "rotate-180" : ""}`}
+                        />
+                        {translationExpanded ? "Show less" : "Show more"}
+                      </button>
                     </div>
                   )}
                 </motion.div>

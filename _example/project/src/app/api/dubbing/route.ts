@@ -3,6 +3,7 @@
 // Streams NDJSON progress events to the client
 
 import { NextRequest, NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { auth } from "@/auth";
 
 export const maxDuration = 60;
@@ -10,6 +11,15 @@ export const maxDuration = 60;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
 const TTS_MAX_LENGTH = 5000;
+
+function isValidBlobUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.endsWith(".blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
 
 // Parse ElevenLabs error responses into user-friendly messages
 async function parseElevenLabsError(
@@ -99,32 +109,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const targetLang = formData.get("targetLang") as string;
-  const voiceId = formData.get("voiceId") as string;
+  const body = await req.json();
+  const { blobUrl, targetLang, voiceId, fileType } = body as {
+    blobUrl: string;
+    targetLang: string;
+    voiceId: string;
+    fileType: string;
+  };
 
-  if (!file || !targetLang || !voiceId) {
+  if (!blobUrl || !targetLang || !voiceId) {
     return NextResponse.json(
-      { error: "File, target language, and voice are required" },
+      { error: "blobUrl, target language, and voice are required" },
       { status: 400 }
     );
   }
 
-  if (file.size > 25 * 1024 * 1024) {
+  if (!isValidBlobUrl(blobUrl)) {
     return NextResponse.json(
-      { error: "File size exceeds 25MB limit" },
-      { status: 400 }
-    );
-  }
-
-  const validTypes = [
-    "audio/mpeg", "audio/wav", "audio/mp4", "audio/x-m4a", "audio/webm", "audio/flac",
-    "video/mp4", "video/webm", "video/quicktime",
-  ];
-  if (!validTypes.includes(file.type)) {
-    return NextResponse.json(
-      { error: `Unsupported file format: ${file.type}` },
+      { error: "Invalid blob URL" },
       { status: 400 }
     );
   }
@@ -136,7 +138,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const isVideo = file.type.startsWith("video");
+  const isVideo = (fileType || "").startsWith("video");
+
+  // Fetch file from Vercel Blob
+  let fileBlob: Blob;
+  try {
+    const blobRes = await fetch(blobUrl);
+    if (!blobRes.ok) throw new Error(`Blob fetch failed: ${blobRes.status}`);
+    fileBlob = await blobRes.blob();
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Failed to retrieve uploaded file: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 500 }
+    );
+  }
 
   // Stream NDJSON progress events
   const stream = new ReadableStream({
@@ -152,7 +167,7 @@ export async function POST(req: NextRequest) {
         send({ step: "transcribe", status: "started" });
 
         const sttFormData = new FormData();
-        sttFormData.append("file", file);
+        sttFormData.append("file", fileBlob, "upload");
         sttFormData.append("model_id", "scribe_v1");
 
         const sttRes = await fetch(`${ELEVENLABS_BASE}/speech-to-text`, {
@@ -307,6 +322,12 @@ export async function POST(req: NextRequest) {
           error: `Internal server error: ${error instanceof Error ? error.message : String(error)}`,
         });
       } finally {
+        // Clean up blob storage
+        try {
+          await del(blobUrl);
+        } catch {
+          console.warn("Failed to delete blob:", blobUrl);
+        }
         controller.close();
       }
     },

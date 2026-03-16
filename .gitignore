@@ -12,3 +12,4 @@ dist/
 */input/*.pdf
 tools/design-inspiration-mcp/node_modules/
 tools/design-inspiration-mcp/dist/
+.vercel
