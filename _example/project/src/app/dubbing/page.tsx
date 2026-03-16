@@ -52,6 +52,18 @@ interface Voice {
   gender: string | null;
 }
 
+const DEMO_TRANSCRIPTION =
+  "Hello, welcome to VoiceBridge. This is a demo of our AI-powered dubbing service.";
+
+const DEMO_TRANSLATIONS: Record<string, string> = {
+  ko: "안녕하세요, VoiceBridge에 오신 것을 환영합니다. AI 기반 더빙 서비스의 데모입니다.",
+  ja: "こんにちは、VoiceBridgeへようこそ。AI搭載の吹き替えサービスのデモです。",
+  zh: "您好，欢迎来到VoiceBridge。这是我们AI驱动的配音服务的演示。",
+  es: "Hola, bienvenido a VoiceBridge. Esta es una demostración de nuestro servicio de doblaje con IA.",
+  fr: "Bonjour, bienvenue sur VoiceBridge. Ceci est une démonstration de notre service de doublage IA.",
+  de: "Hallo, willkommen bei VoiceBridge. Dies ist eine Demo unseres KI-gestützten Synchronisationsdienstes.",
+};
+
 const ACCEPTED_TYPES = [
   "audio/mpeg", "audio/wav", "audio/mp4", "audio/x-m4a", "audio/webm", "audio/flac",
   "video/mp4", "video/webm", "video/quicktime",
@@ -71,6 +83,9 @@ export default function DubbingPage() {
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Demo mode
+  const [isDemo, setIsDemo] = useState(false);
 
   // Result state
   const [transcription, setTranscription] = useState<string | null>(null);
@@ -300,6 +315,40 @@ export default function DubbingPage() {
     }
   }, [file, targetLang, selectedVoice]);
 
+  const startDemo = useCallback(async () => {
+    setIsDemo(true);
+    setIsProcessing(true);
+    setCurrentStep(1);
+    setTranscription(null);
+    setTranslation(null);
+    setAudioUrl(null);
+    setResultIsVideo(false);
+    setPlaybackProgress(0);
+
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    // Step 1→2: Upload → Transcribe
+    await delay(1000);
+    setCurrentStep(2);
+    await delay(1200);
+    setTranscription(DEMO_TRANSCRIPTION);
+
+    // Step 2→3: Transcribe → Translate
+    setCurrentStep(3);
+    await delay(1000);
+    setTranslation(
+      DEMO_TRANSLATIONS[targetLang] || DEMO_TRANSCRIPTION
+    );
+
+    // Step 3→4: Translate → Synthesize
+    setCurrentStep(4);
+    await delay(1500);
+
+    // Step 4→5: Done
+    setCurrentStep(5);
+    setIsProcessing(false);
+  }, [targetLang]);
+
   // Sync video (muted) with dubbed audio playback
   useEffect(() => {
     if (!resultIsVideo || !videoRef.current || !audioRef.current) return;
@@ -429,6 +478,7 @@ export default function DubbingPage() {
     setPlaybackProgress(0);
     setPlaybackTime("0:00");
     setPlaybackDuration("0:00");
+    setIsDemo(false);
   };
 
   const isVideo = file?.type.startsWith("video");
@@ -507,7 +557,7 @@ export default function DubbingPage() {
           <div className="space-y-6">
             <AnimatePresence mode="wait">
               {/* Upload Zone */}
-              {currentStep < 5 && !file && (
+              {currentStep < 5 && !file && !isDemo && (
                 <motion.div
                   key="upload"
                   initial={{ opacity: 0, y: 16 }}
@@ -544,6 +594,47 @@ export default function DubbingPage() {
                       </p>
                     </div>
                   </div>
+                </motion.div>
+              )}
+
+              {/* Demo file info (shown during demo processing) */}
+              {isDemo && currentStep >= 1 && currentStep < 5 && (
+                <motion.div
+                  key="demo-file-info"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card rounded-3xl p-6 border border-border"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center">
+                      <FileAudio className="w-6 h-6 text-brand" />
+                    </div>
+                    <div>
+                      <p className="font-medium">demo-sample.mp3</p>
+                      <p className="text-sm text-muted-foreground">2.40 MB</p>
+                    </div>
+                    <span className="ml-auto text-xs font-medium text-brand bg-brand/10 px-2.5 py-1 rounded-full">
+                      DEMO
+                    </span>
+                  </div>
+
+                  {transcription && (
+                    <div className="mt-4 p-4 bg-background rounded-2xl border border-border">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                        Transcription
+                      </p>
+                      <p className="text-sm leading-relaxed">{transcription}</p>
+                    </div>
+                  )}
+
+                  {translation && (
+                    <div className="mt-3 p-4 bg-background rounded-2xl border border-brand/20">
+                      <p className="text-xs font-medium text-brand uppercase tracking-wider mb-2">
+                        Translation ({LANGUAGES.find((l) => l.code === targetLang)?.name})
+                      </p>
+                      <p className="text-sm leading-relaxed">{translation}</p>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -694,95 +785,121 @@ export default function DubbingPage() {
                     </div>
                   )}
 
-                  {/* Video Player (muted original + dubbed audio) */}
-                  {resultIsVideo && videoObjectUrl && (
-                    <div
-                      className="bg-background rounded-2xl overflow-hidden border border-border mb-4 relative group cursor-pointer"
-                      onClick={handleVideoClick}
-                    >
-                      <video
-                        ref={videoRef}
-                        src={videoObjectUrl}
-                        muted
-                        playsInline
-                        className="w-full"
-                      />
-                      {/* Play/Pause overlay */}
-                      <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
-                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                          {isPlaying ? (
-                            <Pause className="w-7 h-7 text-black" />
-                          ) : (
-                            <Play className="w-7 h-7 text-black ml-1" />
-                          )}
-                        </div>
+                  {isDemo ? (
+                    <>
+                      {/* Demo mode notice */}
+                      <div className="bg-background rounded-2xl p-6 border border-border text-center">
+                        <p className="text-sm text-muted-foreground">
+                          This is a demo — no actual audio was generated.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Upload a real file and use Start Dubbing for full functionality.
+                        </p>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Audio Player Controls */}
-                  <div className="bg-background rounded-2xl p-6 border border-border">
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={togglePlay}
-                        className="w-12 h-12 rounded-full bg-brand flex items-center justify-center hover:bg-brand-light transition-colors"
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-5 h-5 text-white" />
-                        ) : (
-                          <Play className="w-5 h-5 text-white ml-0.5" />
-                        )}
-                      </button>
-                      <div className="flex-1 space-y-1">
-                        <div
-                          ref={progressBarRef}
-                          onClick={handleSeek}
-                          className="h-1.5 bg-secondary rounded-full overflow-hidden cursor-pointer hover:h-2.5 transition-all"
+                      <div className="flex gap-3 mt-6">
+                        <Button
+                          variant="outline"
+                          className="flex-1 rounded-full h-12 text-base"
+                          onClick={resetState}
                         >
-                          <div
-                            className="h-full bg-brand rounded-full transition-[width] duration-200"
-                            style={{ width: `${playbackProgress * 100}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                          <span>{playbackTime}</span>
-                          <span>{playbackDuration}</span>
-                        </div>
+                          Try with Real File
+                        </Button>
                       </div>
-                    </div>
-                    {resultIsVideo && (
-                      <p className="text-xs text-muted-foreground mt-3">
-                        Original video with dubbed audio
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3 mt-6">
-                    <Button
-                      onClick={handleDownload}
-                      disabled={isMerging}
-                      className="flex-1 bg-brand hover:bg-brand-light rounded-full h-12 text-base"
-                    >
-                      {isMerging ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Merging Video...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          {resultIsVideo ? "Download Video" : "Download Audio"}
-                        </>
+                    </>
+                  ) : (
+                    <>
+                      {/* Video Player (muted original + dubbed audio) */}
+                      {resultIsVideo && videoObjectUrl && (
+                        <div
+                          className="bg-background rounded-2xl overflow-hidden border border-border mb-4 relative group cursor-pointer"
+                          onClick={handleVideoClick}
+                        >
+                          <video
+                            ref={videoRef}
+                            src={videoObjectUrl}
+                            muted
+                            playsInline
+                            className="w-full"
+                          />
+                          {/* Play/Pause overlay */}
+                          <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
+                            <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                              {isPlaying ? (
+                                <Pause className="w-7 h-7 text-black" />
+                              ) : (
+                                <Play className="w-7 h-7 text-black ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="rounded-full h-12"
-                      onClick={resetState}
-                    >
-                      New Dubbing
-                    </Button>
-                  </div>
+
+                      {/* Audio Player Controls */}
+                      <div className="bg-background rounded-2xl p-6 border border-border">
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={togglePlay}
+                            className="w-12 h-12 rounded-full bg-brand flex items-center justify-center hover:bg-brand-light transition-colors"
+                          >
+                            {isPlaying ? (
+                              <Pause className="w-5 h-5 text-white" />
+                            ) : (
+                              <Play className="w-5 h-5 text-white ml-0.5" />
+                            )}
+                          </button>
+                          <div className="flex-1 space-y-1">
+                            <div
+                              ref={progressBarRef}
+                              onClick={handleSeek}
+                              className="h-1.5 bg-secondary rounded-full overflow-hidden cursor-pointer hover:h-2.5 transition-all"
+                            >
+                              <div
+                                className="h-full bg-brand rounded-full transition-[width] duration-200"
+                                style={{ width: `${playbackProgress * 100}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+                              <span>{playbackTime}</span>
+                              <span>{playbackDuration}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {resultIsVideo && (
+                          <p className="text-xs text-muted-foreground mt-3">
+                            Original video with dubbed audio
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex gap-3 mt-6">
+                        <Button
+                          onClick={handleDownload}
+                          disabled={isMerging}
+                          className="flex-1 bg-brand hover:bg-brand-light rounded-full h-12 text-base"
+                        >
+                          {isMerging ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Merging Video...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              {resultIsVideo ? "Download Video" : "Download Audio"}
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-full h-12"
+                          onClick={resetState}
+                        >
+                          New Dubbing
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -879,13 +996,41 @@ export default function DubbingPage() {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
+                className="flex gap-3"
               >
                 <Button
                   onClick={startDubbing}
-                  className="w-full bg-brand hover:bg-brand-light rounded-full h-14 text-lg font-semibold"
+                  className="flex-1 bg-brand hover:bg-brand-light rounded-full h-14 text-lg font-semibold"
                 >
                   Start Dubbing
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={startDemo}
+                  className="rounded-full h-14 px-6 text-lg font-semibold"
+                >
+                  Demo
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Demo Button (shown when no file selected) */}
+            {!file && currentStep === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Button
+                  variant="outline"
+                  onClick={startDemo}
+                  className="w-full rounded-full h-12 text-base"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Try Demo
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  See the full flow with sample data
+                </p>
               </motion.div>
             )}
 
