@@ -75,6 +75,25 @@ Create `project/.env.example`:
    - **Stop here**
 5. All keys have values → proceed to Phase 1 automatically
 
+### Step 0.8 — Deploy platform constraints lookup
+
+Based on tech_stack.deploy, look up the **platform's official documentation** via Context7 or web.
+Do not rely on learned knowledge — always verify the latest figures from official docs and
+add them to `analysis/tech-constraints.md` under a **"Deploy Platform Constraints"** section:
+
+Required lookup items (platform-agnostic, applies to all deploy targets):
+1. **Serverless function request body size limit** — maximum receivable size (number + source URL)
+2. **API response size limit** — maximum serverless function response size
+3. **Function execution time limit** — timeout per plan (free/paid)
+4. **File storage SDK recommended patterns** — if the platform has a file storage service (Blob, R2, S3, etc.):
+   - Whether a client direct upload pattern exists (to bypass body limit)
+   - Upload collision prevention options (random suffix, dedup, etc.)
+   - Whether eventual consistency applies on read-after-upload, and recommended mitigation patterns
+5. **Other platform-specific constraints** — cold starts, region limits, concurrency limits, etc.
+
+**Principle**: All figures must be recorded with official documentation sources.
+All feature implementations in Phase 3 must reference this section.
+
 ---
 
 ## Phase 1: Project Initialization
@@ -273,6 +292,12 @@ Feature FR-XXX: [title] (priority: must/should/could)
    d. **No hardcoding**: Resource IDs (models, voices, etc.) must be dynamically fetched via list endpoints or separated into env vars
    e. Error handling: branch by error codes from API documentation
 
+2.5. Platform constraint check (all features):
+   a. If this feature involves file upload/download → reference Step 0.8 constraints + complex features table "File upload" row
+   b. If request/response size may exceed the platform limits confirmed in Step 0.8 → apply the platform's official bypass patterns (client upload, streaming, etc.)
+   c. Server response parsing must include try-catch for JSON failure — all serverless platforms may return their own error pages (HTML/plain-text)
+   d. If uncertain, query Context7 with platform + feature keywords to confirm official patterns
+
 3. Create API route(s):
    - Apply auth check pattern (from Phase 2)
    - Input validation
@@ -287,6 +312,12 @@ Feature FR-XXX: [title] (priority: must/should/could)
 
 5. npm run build — fix on failure
 
+5.5. Runtime smoke test (file upload or external API integration features only):
+   - If Playwright available: start dev server → execute the feature once → confirm success → kill dev server
+   - Upload features: test with small file (~1MB) + large file (80% of body limit) — 2 runs
+   - API integration: call actual API once to verify response structure
+   - On failure: check if error message is JSON, if non-JSON then strengthen client parsing
+
 6. Proceed to next feature
 ```
 
@@ -294,7 +325,8 @@ Feature FR-XXX: [title] (priority: must/should/could)
 
 | Feature type | Special considerations |
 |---|---|
-| File upload | Next.js API route default body limit **1MB** → must increase in `next.config`. Vercel 4.5MB limit → presigned URL pattern recommended |
+| File upload | **Must reference Step 0.8 platform constraints.** ① If body limit < upload max size, look up the platform's **client direct upload pattern** via Context7/official docs (no server passthrough). ② Check storage SDK's collision prevention options (random suffix, etc.) in official docs — mandatory. ③ Include retry logic for read-after-upload (eventual consistency mitigation). ④ Client error parsing must include try-catch for non-JSON responses (platforms may return HTML/plain-text errors). |
+| Cloud storage reads | Read-after-upload may return 404/stale (eventual consistency is common across most CDN/object storage). Apply minimum 3 retries + exponential backoff. Check the SDK's official docs for consistency-related options. |
 | Payments (Stripe) | Webhook handler + idempotency keys + test mode |
 | AI API calls | Streaming response (SSE) + timeout handling |
 | Real-time features | SSE or polling pattern (Vercel serverless constraints) |
@@ -341,22 +373,27 @@ Compare:
 
 TOP 3 visual differences → fix → recapture → recompare.
 
-### Step 4.6 — Core feature end-to-end verification
+### Step 4.6 — Core feature E2E verification (including interactive)
 
-For **each must-have feature** in requirements.json:
+For each must-have feature in requirements.json:
 
-1. Execute the full user flow via Playwright:
-   - Input → processing wait → result verification (complete the flow)
-   - For external API features, perform actual API calls (use test data)
+1. Execute full user flow via Playwright (input → processing → result)
 
-2. Capture result screenshots + verify:
-   - Loading/progress states reflect actual processing (no fake timers or hardcoded values)
-   - Result data displays correctly on screen
-   - Interactive elements (playback, download, toggles, etc.) actually work
+2. Result screen screenshot + verification:
+   - Loading state reflects actual processing
+   - Result data displays correctly
 
-3. Issues found → fix immediately → re-run to confirm (max 3 iterations)
+3. **Individual interactive element tests**:
+   - **Media players**: play → pause → click seek bar → resume playback.
+     If video+audio are separate elements, verify **sync between both**
+   - **Toggles/collapsibles**: expand → verify content → collapse
+   - **Downloads**: click → verify network request or href exists
+   - **Form inputs**: change dropdown → verify related UI updates
+   - **Long text**: verify overflow handling (line-clamp, scroll, collapse)
 
-**Untestable features** (require OAuth login, etc.): note skip reason and generate manual test checklist
+4. Issues found → fix immediately → re-run (max 3 iterations)
+
+Untestable features (OAuth, etc.): generate manual test checklist
 
 ### Step 4.7 — Kill dev server
 ```bash
