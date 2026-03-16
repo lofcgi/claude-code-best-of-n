@@ -2,7 +2,7 @@
 
 > 음성/영상 파일을 업로드하면 AI가 음성 인식 → 번역 → 더빙까지 자동으로 처리하는 웹 서비스.
 >
-> **배포**: [project-nine-nu-52.vercel.app](https://project-nine-nu-52.vercel.app)
+> **배포**: [project-ochre-phi-26.vercel.app](https://project-ochre-phi-26.vercel.app)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with AI Agent Pipeline](https://img.shields.io/badge/Built_with-AI_Agent_Pipeline-blueviolet)](../)
