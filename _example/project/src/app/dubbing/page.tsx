@@ -23,6 +23,7 @@ import Link from "next/link";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { trimMedia } from "@/lib/trim-media";
+import { TrimEditor } from "@/components/trim-editor";
 
 const LANGUAGES = [
   { code: "ko", name: "Korean", flag: "\u{1F1F0}\u{1F1F7}" },
@@ -99,9 +100,10 @@ export default function DubbingPage() {
   const [resultIsVideo, setResultIsVideo] = useState(false);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
 
-  // Media duration (for trim notice)
+  // Media duration + trim editor
   const [mediaDuration, setMediaDuration] = useState<number | null>(null);
-  const [showTrimWarning, setShowTrimWarning] = useState(false);
+  const [showTrimEditor, setShowTrimEditor] = useState(false);
+  const [trimRange, setTrimRange] = useState<{ start: number; end: number } | null>(null);
 
   // Playback state
   const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -163,7 +165,8 @@ export default function DubbingPage() {
   useEffect(() => {
     if (!file) {
       setMediaDuration(null);
-      setShowTrimWarning(false);
+      setShowTrimEditor(false);
+      setTrimRange(null);
       return;
     }
     const url = URL.createObjectURL(file);
@@ -175,7 +178,7 @@ export default function DubbingPage() {
     const handleDuration = (dur: number) => {
       setMediaDuration(dur);
       if (dur > 60) {
-        setShowTrimWarning(true);
+        setShowTrimEditor(true);
       }
     };
 
@@ -252,14 +255,17 @@ export default function DubbingPage() {
     setPlaybackProgress(0);
 
     try {
-      // Step 1: Trim to 1 minute if needed (client-side)
+      // Step 1: Trim if needed (client-side)
       let fileToUpload = file;
-      const { file: trimmedFile, trimmed, originalDuration } = await trimMedia(file);
-      if (trimmed) {
+      if (trimRange) {
+        const segDuration = trimRange.end - trimRange.start;
+        const { file: trimmedFile } = await trimMedia(file, segDuration, trimRange.start);
         fileToUpload = trimmedFile;
-        const mins = Math.floor(originalDuration / 60);
-        const secs = Math.floor(originalDuration % 60);
-        toast.info(`Trimmed from ${mins}:${secs.toString().padStart(2, "0")} to 1:00`);
+        toast.info(`Trimmed to ${formatTime(trimRange.start)} — ${formatTime(trimRange.end)}`);
+      } else if (mediaDuration && mediaDuration > 60) {
+        // Fallback: auto-trim first 60s if no range selected
+        const { file: trimmedFile, trimmed } = await trimMedia(file);
+        if (trimmed) fileToUpload = trimmedFile;
       }
 
       // Safety check: trimmed file must be under 25MB for upload
@@ -376,7 +382,7 @@ export default function DubbingPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [file, targetLang, selectedVoice]);
+  }, [file, targetLang, selectedVoice, trimRange, mediaDuration]);
 
   const startDemo = useCallback(async () => {
     setIsDemo(true);
@@ -547,7 +553,8 @@ export default function DubbingPage() {
     setPlaybackDuration("0:00");
     setIsDemo(false);
     setMediaDuration(null);
-    setShowTrimWarning(false);
+    setShowTrimEditor(false);
+    setTrimRange(null);
   };
 
   const isVideo = file?.type.startsWith("video");
@@ -565,53 +572,21 @@ export default function DubbingPage() {
         />
       )}
 
-      {/* Trim warning modal */}
+      {/* Trim editor */}
       <AnimatePresence>
-        {showTrimWarning && mediaDuration != null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card rounded-3xl p-6 border border-border max-w-sm w-full shadow-2xl"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Scissors className="w-5 h-5 text-amber-500" />
-                </div>
-                <h3 className="font-semibold text-lg">Auto Trim</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-1">
-                This file is <span className="font-medium text-foreground">{formatTime(mediaDuration)}</span> long.
-              </p>
-              <p className="text-sm text-muted-foreground mb-5">
-                Only the <span className="font-medium text-foreground">first 1 minute</span> will be processed. The file will be trimmed automatically before upload.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-xl"
-                  onClick={() => {
-                    setShowTrimWarning(false);
-                    resetState();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 rounded-xl bg-brand hover:bg-brand/90"
-                  onClick={() => setShowTrimWarning(false)}
-                >
-                  OK, continue
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+        {showTrimEditor && file && mediaDuration != null && mediaDuration > 60 && (
+          <TrimEditor
+            file={file}
+            duration={mediaDuration}
+            onApply={(start, end) => {
+              setTrimRange({ start, end });
+              setShowTrimEditor(false);
+            }}
+            onCancel={() => {
+              setShowTrimEditor(false);
+              resetState();
+            }}
+          />
         )}
       </AnimatePresence>
 
@@ -783,7 +758,15 @@ export default function DubbingPage() {
                         {mediaDuration != null && mediaDuration > 60 && !isProcessing && (
                           <p className="text-xs text-amber-500 mt-0.5 flex items-center gap-1">
                             <Scissors className="w-3 h-3" />
-                            Will be trimmed to 1:00 before upload
+                            {trimRange
+                              ? `${formatTime(trimRange.start)} — ${formatTime(trimRange.end)} (${formatTime(trimRange.end - trimRange.start)})`
+                              : "Needs trimming — select a 1-min segment"}
+                            <button
+                              onClick={() => setShowTrimEditor(true)}
+                              className="ml-1 underline hover:text-amber-400 transition-colors"
+                            >
+                              {trimRange ? "Edit" : "Open"}
+                            </button>
                           </p>
                         )}
                       </div>

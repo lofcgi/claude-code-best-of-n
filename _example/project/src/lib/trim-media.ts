@@ -40,17 +40,18 @@ function getMediaDuration(file: File): Promise<number> {
 }
 
 /**
- * Trim a media file to the first `maxSeconds` using FFmpeg.wasm (client-side).
+ * Trim a media file to a specific range using FFmpeg.wasm (client-side).
  * Uses stream copy (-c copy) to avoid re-encoding — fast and low memory.
- * Returns the original file unchanged if duration <= maxSeconds.
+ * Returns the original file unchanged if duration <= maxSeconds and startTime is 0.
  */
 export async function trimMedia(
   file: File,
   maxSeconds = MAX_SECONDS,
+  startTime = 0,
 ): Promise<{ file: File; trimmed: boolean; originalDuration: number }> {
   const duration = await getMediaDuration(file);
 
-  if (duration <= maxSeconds) {
+  if (duration <= maxSeconds && startTime === 0) {
     return { file, trimmed: false, originalDuration: duration };
   }
 
@@ -64,6 +65,7 @@ export async function trimMedia(
   const isVideo = file.type.startsWith("video/");
   const args = [
     "-y",
+    ...(startTime > 0 ? ["-ss", String(startTime)] : []),
     "-i",
     inputName,
     "-t",
