@@ -16,11 +16,13 @@ import {
   Pause,
   Mic,
   ChevronDown,
+  Scissors,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
+import { trimMedia } from "@/lib/trim-media";
 
 const LANGUAGES = [
   { code: "ko", name: "Korean", flag: "\u{1F1F0}\u{1F1F7}" },
@@ -36,11 +38,12 @@ const LANGUAGES = [
 ];
 
 const STEPS = [
-  { id: 1, label: "Upload", icon: Upload },
-  { id: 2, label: "Transcribe", icon: FileAudio },
-  { id: 3, label: "Translate", icon: Globe },
-  { id: 4, label: "Synthesize", icon: Play },
-  { id: 5, label: "Done", icon: Check },
+  { id: 1, label: "Trim", icon: Scissors },
+  { id: 2, label: "Upload", icon: Upload },
+  { id: 3, label: "Transcribe", icon: FileAudio },
+  { id: 4, label: "Translate", icon: Globe },
+  { id: 5, label: "Synthesize", icon: Play },
+  { id: 6, label: "Done", icon: Check },
 ];
 
 interface Voice {
@@ -95,6 +98,9 @@ export default function DubbingPage() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [resultIsVideo, setResultIsVideo] = useState(false);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+
+  // Media duration (for trim notice)
+  const [mediaDuration, setMediaDuration] = useState<number | null>(null);
 
   // Playback state
   const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -152,6 +158,36 @@ export default function DubbingPage() {
     };
   }, []);
 
+  // Detect media duration when file is selected
+  useEffect(() => {
+    if (!file) {
+      setMediaDuration(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const el = file.type.startsWith("video/")
+      ? document.createElement("video")
+      : document.createElement("audio");
+    el.preload = "metadata";
+    el.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      if (isFinite(el.duration)) {
+        setMediaDuration(el.duration);
+      } else {
+        el.currentTime = 1e10;
+        el.ontimeupdate = () => {
+          el.ontimeupdate = null;
+          setMediaDuration(el.duration);
+        };
+      }
+    };
+    el.onerror = () => {
+      URL.revokeObjectURL(url);
+      setMediaDuration(null);
+    };
+    el.src = url;
+  }, [file]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -162,8 +198,8 @@ export default function DubbingPage() {
     if (!ACCEPTED_TYPES.includes(f.type)) {
       return "Unsupported file format. Please use MP3, WAV, MP4, M4A, or WEBM.";
     }
-    if (f.size > 25 * 1024 * 1024) {
-      return "File size exceeds 25MB limit.";
+    if (f.size > 100 * 1024 * 1024) {
+      return "File size exceeds 100MB limit.";
     }
     return null;
   };
@@ -198,30 +234,47 @@ export default function DubbingPage() {
     if (!file) return;
 
     setIsProcessing(true);
-    setCurrentStep(1); // Upload step
+    setCurrentStep(1); // Trim step
     setTranscription(null);
     setTranslation(null);
     setAudioUrl(null);
     setResultIsVideo(false);
     setPlaybackProgress(0);
 
-    // For video files, create object URL for later sync playback
-    const isVideoFile = file.type.startsWith("video");
-    if (isVideoFile) {
-      const url = URL.createObjectURL(file);
-      setVideoObjectUrl(url);
-    }
-
     try {
-      // Step 1: Upload file to Vercel Blob
-      const blob = await upload(file.name, file, {
+      // Step 1: Trim to 1 minute if needed (client-side)
+      let fileToUpload = file;
+      const { file: trimmedFile, trimmed, originalDuration } = await trimMedia(file);
+      if (trimmed) {
+        fileToUpload = trimmedFile;
+        const mins = Math.floor(originalDuration / 60);
+        const secs = Math.floor(originalDuration % 60);
+        toast.info(`Trimmed from ${mins}:${secs.toString().padStart(2, "0")} to 1:00`);
+      }
+
+      // Safety check: trimmed file must be under 25MB for upload
+      if (fileToUpload.size > 25 * 1024 * 1024) {
+        throw new Error("File is still too large after trimming. Please use a shorter or smaller file.");
+      }
+
+      setCurrentStep(2); // Upload step
+
+      // For video files, create object URL for later sync playback
+      const isVideoFile = fileToUpload.type.startsWith("video");
+      if (isVideoFile) {
+        const url = URL.createObjectURL(fileToUpload);
+        setVideoObjectUrl(url);
+      }
+
+      // Step 2: Upload file to Vercel Blob
+      const blob = await upload(fileToUpload.name, fileToUpload, {
         access: "public",
         handleUploadUrl: "/api/dubbing/upload",
       });
 
-      setCurrentStep(2); // Move to transcribe step
+      setCurrentStep(3); // Move to transcribe step
 
-      // Step 2: Send blob URL to dubbing API
+      // Step 3: Send blob URL to dubbing API
       const res = await fetch("/api/dubbing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -229,7 +282,7 @@ export default function DubbingPage() {
           blobUrl: blob.url,
           targetLang,
           voiceId: selectedVoice,
-          fileType: file.type,
+          fileType: fileToUpload.type,
         }),
       });
 
@@ -275,17 +328,17 @@ export default function DubbingPage() {
             throw new Error(event.error || "Dubbing failed");
           }
 
-          // Map step names to step numbers
+          // Map step names to step numbers (offset by 1 for Trim step)
           if (event.step === "transcribe" && event.status === "started") {
-            setCurrentStep(2);
+            setCurrentStep(3);
           } else if (event.step === "transcribe" && event.status === "done") {
             setTranscription(event.transcription);
           } else if (event.step === "translate" && event.status === "started") {
-            setCurrentStep(3);
+            setCurrentStep(4);
           } else if (event.step === "translate" && event.status === "done") {
             setTranslation(event.translation);
           } else if (event.step === "synthesize" && event.status === "started") {
-            setCurrentStep(4);
+            setCurrentStep(5);
           } else if (event.step === "done") {
             setResultIsVideo(event.isVideo);
 
@@ -296,7 +349,7 @@ export default function DubbingPage() {
             const url = URL.createObjectURL(audioBlob);
             setAudioUrl(url);
 
-            setCurrentStep(5);
+            setCurrentStep(6);
             toast.success("Dubbing complete!");
           }
         }
@@ -327,25 +380,29 @@ export default function DubbingPage() {
 
     const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-    // Step 1→2: Upload → Transcribe
-    await delay(1000);
+    // Step 1→2: Trim → Upload
+    await delay(500);
     setCurrentStep(2);
+
+    // Step 2→3: Upload → Transcribe
+    await delay(1000);
+    setCurrentStep(3);
     await delay(1200);
     setTranscription(DEMO_TRANSCRIPTION);
 
-    // Step 2→3: Transcribe → Translate
-    setCurrentStep(3);
+    // Step 3→4: Transcribe → Translate
+    setCurrentStep(4);
     await delay(1000);
     setTranslation(
       DEMO_TRANSLATIONS[targetLang] || DEMO_TRANSCRIPTION
     );
 
-    // Step 3→4: Translate → Synthesize
-    setCurrentStep(4);
+    // Step 4→5: Translate → Synthesize
+    setCurrentStep(5);
     await delay(1500);
 
-    // Step 4→5: Done
-    setCurrentStep(5);
+    // Step 5→6: Done
+    setCurrentStep(6);
     setIsProcessing(false);
   }, [targetLang]);
 
@@ -479,6 +536,7 @@ export default function DubbingPage() {
     setPlaybackTime("0:00");
     setPlaybackDuration("0:00");
     setIsDemo(false);
+    setMediaDuration(null);
   };
 
   const isVideo = file?.type.startsWith("video");
@@ -557,7 +615,7 @@ export default function DubbingPage() {
           <div className="space-y-6">
             <AnimatePresence mode="wait">
               {/* Upload Zone */}
-              {currentStep < 5 && !file && !isDemo && (
+              {currentStep < 6 && !file && !isDemo && (
                 <motion.div
                   key="upload"
                   initial={{ opacity: 0, y: 16 }}
@@ -598,7 +656,7 @@ export default function DubbingPage() {
               )}
 
               {/* Demo file info (shown during demo processing) */}
-              {isDemo && currentStep >= 1 && currentStep < 5 && (
+              {isDemo && currentStep >= 1 && currentStep < 6 && (
                 <motion.div
                   key="demo-file-info"
                   initial={{ opacity: 0, y: 16 }}
@@ -639,7 +697,7 @@ export default function DubbingPage() {
               )}
 
               {/* File Info */}
-              {file && currentStep < 5 && (
+              {file && currentStep < 6 && (
                 <motion.div
                   key="file-info"
                   initial={{ opacity: 0, y: 16 }}
@@ -659,7 +717,14 @@ export default function DubbingPage() {
                         <p className="font-medium">{file.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {(file.size / (1024 * 1024)).toFixed(2)} MB
+                          {mediaDuration != null && ` · ${formatTime(mediaDuration)}`}
                         </p>
+                        {mediaDuration != null && mediaDuration > 60 && !isProcessing && (
+                          <p className="text-xs text-amber-500 mt-0.5 flex items-center gap-1">
+                            <Scissors className="w-3 h-3" />
+                            Will be trimmed to 1:00 before upload
+                          </p>
+                        )}
                       </div>
                     </div>
                     {!isProcessing && (
@@ -721,7 +786,7 @@ export default function DubbingPage() {
               )}
 
               {/* Result */}
-              {currentStep === 5 && (
+              {currentStep === 6 && (
                 <motion.div
                   key="result"
                   initial={{ opacity: 0, scale: 0.95 }}
