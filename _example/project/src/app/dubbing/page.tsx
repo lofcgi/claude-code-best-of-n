@@ -101,6 +101,7 @@ export default function DubbingPage() {
 
   // Media duration (for trim notice)
   const [mediaDuration, setMediaDuration] = useState<number | null>(null);
+  const [showTrimWarning, setShowTrimWarning] = useState(false);
 
   // Playback state
   const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -162,6 +163,7 @@ export default function DubbingPage() {
   useEffect(() => {
     if (!file) {
       setMediaDuration(null);
+      setShowTrimWarning(false);
       return;
     }
     const url = URL.createObjectURL(file);
@@ -169,15 +171,23 @@ export default function DubbingPage() {
       ? document.createElement("video")
       : document.createElement("audio");
     el.preload = "metadata";
+
+    const handleDuration = (dur: number) => {
+      setMediaDuration(dur);
+      if (dur > 60) {
+        setShowTrimWarning(true);
+      }
+    };
+
     el.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
       if (isFinite(el.duration)) {
-        setMediaDuration(el.duration);
+        handleDuration(el.duration);
       } else {
         el.currentTime = 1e10;
         el.ontimeupdate = () => {
           el.ontimeupdate = null;
-          setMediaDuration(el.duration);
+          handleDuration(el.duration);
         };
       }
     };
@@ -537,6 +547,7 @@ export default function DubbingPage() {
     setPlaybackDuration("0:00");
     setIsDemo(false);
     setMediaDuration(null);
+    setShowTrimWarning(false);
   };
 
   const isVideo = file?.type.startsWith("video");
@@ -553,6 +564,56 @@ export default function DubbingPage() {
           onEnded={handleAudioEnded}
         />
       )}
+
+      {/* Trim warning modal */}
+      <AnimatePresence>
+        {showTrimWarning && mediaDuration != null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-3xl p-6 border border-border max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Scissors className="w-5 h-5 text-amber-500" />
+                </div>
+                <h3 className="font-semibold text-lg">Auto Trim</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-1">
+                This file is <span className="font-medium text-foreground">{formatTime(mediaDuration)}</span> long.
+              </p>
+              <p className="text-sm text-muted-foreground mb-5">
+                Only the <span className="font-medium text-foreground">first 1 minute</span> will be processed. The file will be trimmed automatically before upload.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => {
+                    setShowTrimWarning(false);
+                    resetState();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl bg-brand hover:bg-brand/90"
+                  onClick={() => setShowTrimWarning(false)}
+                >
+                  OK, continue
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Top bar */}
       <div className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-50">

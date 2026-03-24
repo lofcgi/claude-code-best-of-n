@@ -63,13 +63,14 @@ export async function trimMedia(
 
   const isVideo = file.type.startsWith("video/");
   const args = [
+    "-y",
     "-i",
     inputName,
     "-t",
     String(maxSeconds),
-    "-c",
-    "copy",
-    ...(isVideo ? ["-movflags", "+faststart"] : []),
+    ...(isVideo
+      ? ["-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart"]
+      : ["-c", "copy"]),
     outputName,
   ];
 
