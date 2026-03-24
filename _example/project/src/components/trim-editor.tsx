@@ -170,6 +170,7 @@ export function TrimEditor({ file, duration, onApply, onCancel }: TrimEditorProp
       let newStart = dragStartRef.current.startT + dt;
       newStart = clamp(newStart, 0, duration - rangeDur);
       applyRange(newStart, newStart + rangeDur);
+      seekTo(newStart);
     }
   }, [dragging, startTime, endTime, duration, applyRange, getTimeFromPointer, seekTo]);
 
@@ -235,7 +236,7 @@ export function TrimEditor({ file, duration, onApply, onCancel }: TrimEditorProp
         <div className="flex items-center justify-between p-5 pb-0">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Scissors className="w-5 h-5" />
-            구간 자르기
+            Trim Selection
           </h3>
           <button
             onClick={onCancel}
@@ -377,13 +378,13 @@ export function TrimEditor({ file, duration, onApply, onCancel }: TrimEditorProp
             onClick={handleReset}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            되돌리기
+            Reset
           </Button>
           <Button
             className="flex-1 rounded-xl bg-brand hover:bg-brand/90"
             onClick={() => onApply(startTime, endTime)}
           >
-            자르기 적용
+            Apply Trim
           </Button>
         </div>
       </motion.div>
